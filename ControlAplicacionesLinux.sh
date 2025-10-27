@@ -278,6 +278,7 @@ while true; do
         "/var/lib/flatpak/exports/share/applications"
         "/home/$usuario/.local/share/flatpak/exports/share/applications"
         "/snap/bin"
+        "/home/$usuario/Applications/"
     )
 
     for fdir in "${rutas_adicionales[@]}"; do
