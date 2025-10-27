@@ -363,10 +363,14 @@ while true; do
         # Aplicar permisos ACL
         if [ "$action" == "Quitar permisos de ejecución (rw-)" ]; then
             sudo setfacl -m u:"$usuario":rw- "$real_app"
-            sudo chown root:root $real_app
+            if [[ "$real_app" == *.AppImage ]]; then
+                sudo chown root:root $real_app
+            fi
         else
             sudo setfacl -m u:"$usuario":rwx "$real_app"
-            sudo chown $usuario:$usuario $real_app
+            if [[ "$real_app" == *.AppImage ]]; then
+                sudo chown $usuario:$usuario $real_app
+            fi
         fi
     done
 
