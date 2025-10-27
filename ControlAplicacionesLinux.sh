@@ -6,8 +6,8 @@
 
 export NombreScript="$0"
 export DescripcionDelScript="Controla las aplicaciones que puede ejecutar uno o varios usuarios del sistema."
-export Correo="hay que poner el puto correo"
-export Web="y la web "
+export Correo="Correo scripts@mbbsistemas.com"
+export Web="Web https://repositorio.mbbsistemas.es"
 export version="1.0"
 conexion="Sin comprobar"
 software="Sin comprobar"
