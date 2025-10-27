@@ -19,7 +19,7 @@ ruta_escritorio=$(xdg-user-dir DESKTOP) #es la ruta de tu escritorio sin la / al
 
 # VARIABLES PARA LA ACTUALIZAION CON GITHUB
 NombreScriptActualizar="ControlAplicaciones.sh" #contiene el nombre del script para poder actualizar desde github
-DireccionGithub="https://github.com/sukigsx/ControlAplicacionesLinux" #contiene la direccion de github para actualizar el script
+DireccionGithub="https://github.com/sukigsx/pruebas" #contiene la direccion de github para actualizar el script
 
 #VARIABLES DE SOFTWARE NECESARIO
 # Asociamos comandos con el paquete que los contiene [comando a comprobar]="paquete a instalar"
@@ -242,87 +242,72 @@ export ZENITY_NO_GTK_WARNINGS=1
 clear
 if [ "$EUID" -ne 0 ]; then
   clear
-  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
+  menu_info
   echo ""
-  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
-  echo "   sudo $0"
-  echo "   sudo bash $0"
+  echo -e "${rojo} Este script necesita permisos de sudo.${borra_colores}"
   echo ""
-  read -rp "Pulsa Enter para salir..."
+  echo -e "${amarillo} Por favor, ejecútalo con:${borra_colores}"
+  echo -e "   sudo $0"
+  echo -e "   sudo bash $0"
+  echo ""; read p
   exit 1
 else
   clear
-  echo -e "\e[33mOK. Tenemos permisos sudo.\e[0m"
+  menu_info
+  echo -e "${amarillo}OK. Tenemos permisos sudo${borra_colores}"
 fi
 
+
+
 while true; do
-    # 1. Seleccionar un usuario con login
+    # 1. Seleccionamos un usuario del sistema con login
     usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
-        zenity --list --title="Diseñado por SUKIGSX" \
-        --text="Selecciona el usuario para aplicar los permisos de ejecución de las aplicaciones del sistema:" \
-        --column="Usuario" --height=300 --width=300 \
-        --ok-label="Seleccionar" --cancel-label="Salir" 2>/dev/null)
+        zenity --list --title="Diseñado por SUKIGSX" --text="Selecciona el usuario para aplicar los permisos de ejecucion de las aplicaciones del sistema:" \
+        --column="Usuario" --height=300 --width=300 --ok-label="Seleccionar" --cancel-label="Salir" 2>/dev/null)
 
     if [ -z "$usuario" ]; then
         exit 0
     fi
 
-    # 2. Listar binarios y archivos .desktop
+    # 2. Listar binarios en rutas del $PATH
     apps_array=()
     IFS=: read -ra path_dirs <<< "$PATH"
-
-    # Añadir rutas adicionales (binarios y lanzadores)
-    rutas_adicionales=(
-        "/var/lib/flatpak/exports/bin"
-        "/home/$usuario/.local/share/flatpak/exports/bin"
-        "/var/lib/flatpak/exports/share/applications"
-        "/home/$usuario/.local/share/flatpak/exports/share/applications"
-        "/snap/bin"
-    )
-
-    for fdir in "${rutas_adicionales[@]}"; do
-        if [ -d "$fdir" ]; then
-            path_dirs+=("$fdir")
-        fi
-    done
-
-    # Buscar binarios y .desktop
     for dir in "${path_dirs[@]}"; do
         if [ -d "$dir" ]; then
             while IFS= read -r file; do
-                # Incluir ejecutables y .desktop
-                if { [ -x "$file" ] && [ -f "$file" ]; } || [[ "$file" == *.desktop ]]; then
+                # Solo archivos ejecutables regulares o enlaces simbólicos
+                if [ -x "$file" ] && [ -f "$file" ]; then
                     apps_array+=("$file")
                 fi
-            done < <(find "$dir" -maxdepth 1 \( -type f -o -type l \) 2>/dev/null)
+            done < <(find "$dir" -maxdepth 1 -type f -o -type l 2>/dev/null)
         fi
     done
 
     # Ordenar y eliminar duplicados
     mapfile -t apps_array < <(printf "%s\n" "${apps_array[@]}" | sort -u)
 
-    # 3. Convertir la lista en formato Zenity
+    # Convertimos la lista en formato para Zenity --checklist
     zenity_list=()
     for app in "${apps_array[@]}"; do
         zenity_list+=("$app" "$app" FALSE)
     done
 
-    # Mostrar lista de binarios/.desktop
+    # Mostramos la lista de binarios
     selected_apps=$(zenity --list --checklist \
         --title="Diseñado por SUKIGSX" \
-        --text="Selecciona las aplicaciones marcando las casillas.\n- Puedes seleccionar una o varias\n- También puedes buscar aplicaciones escribiendo directamente su nombre" \
-        --column="Selecciona" --column="Archivo" --column="Seleccionada" \
+        --text="Selecciona las aplicaciones marcando las casillas.\n- Puedes seleccionar una o varias\n- Tambien puedes buscar aplicaciones escribiendo directamente su nombre" \
+        --column="Selecciona" --column="Binario" --column="Seleccionada" \
         "${zenity_list[@]}" \
-        --height=500 --width=800 \
+        --height=400 --width=700 \
         --ok-label="Seleccionar" --cancel-label="Atrás" 2>/dev/null)
 
     if [ -z "$selected_apps" ]; then
         continue
     fi
 
-    # 4. Seleccionar acción
-    action=$(zenity --list --title="Diseñado por SUKIGSX" \
-        --text="Aplicaciones seleccionadas para el usuario $usuario:\n\n$(echo "$selected_apps" | tr '|' '\n' | sed 's/^ *//;s/ *$//')\n" \
+    # 3. Preguntar acción
+
+    action=$(zenity --list --title="Diseñado por SUKIGSX" --text="Aplicaciones seleccionadas para el usuario $usuario:\n\n $(echo "$selected_apps" | tr '|' '\n' | sed 's/^ *//;s/ *$//')\n" \
         --radiolist --column="Selecciona" --column="Acción" \
         TRUE "Quitar permisos de ejecución (rw-)" \
         FALSE "Dar permisos de ejecución (rwx)" \
@@ -332,34 +317,11 @@ while true; do
         exit 0
     fi
 
-    # 5. Aplicar ACL a cada archivo seleccionado
+    # Aplicamos ACL a cada binario seleccionado
     IFS="|" read -ra apps_selected <<< "$selected_apps"
-
     for app in "${apps_selected[@]}"; do
-        target="$app"
-
-        # Si es un archivo .desktop, buscar su "Exec="
-        if [[ "$app" == *.desktop ]]; then
-            exec_line=$(grep -m1 "^Exec=" "$app" | cut -d'=' -f2- | awk '{print $1}')
-            if [ -n "$exec_line" ]; then
-                # Si usa Flatpak
-                if command -v flatpak &>/dev/null && [[ "$exec_line" == flatpak* ]]; then
-                    flatpak_id=$(echo "$exec_line" | awk '{print $2}')
-                    if [ -x "/var/lib/flatpak/exports/bin/$flatpak_id" ]; then
-                        target="/var/lib/flatpak/exports/bin/$flatpak_id"
-                    elif [ -x "/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id" ]; then
-                        target="/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id"
-                    fi
-                elif [ -x "$exec_line" ]; then
-                    target="$exec_line"
-                fi
-            fi
-        fi
-
-        # Resolver enlace simbólico
-        real_app=$(readlink -f "$target")
-
-        # Aplicar permisos ACL
+        # Resolver enlace simbólico si existe
+        real_app=$(readlink -f "$app")
         if [ "$action" == "Quitar permisos de ejecución (rw-)" ]; then
             sudo setfacl -m u:"$usuario":rw- "$real_app"
         else
@@ -367,7 +329,6 @@ while true; do
         fi
     done
 
-    # 6. Confirmación
     zenity --info --text="Permisos ACL aplicados correctamente al usuario $usuario." 2>/dev/null
 
     exit 0
