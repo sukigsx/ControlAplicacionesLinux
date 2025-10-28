@@ -273,20 +273,20 @@ export ZENITY_NO_GTK_WARNINGS=1
 
 # Comprobar si el script se ejecuta con privilegios de root
 clear
-#if [ "$EUID" -ne 0 ]; then
-#  clear
-#  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
-#  echo ""
-#  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
-#  echo "   sudo $0"
-#  echo "   sudo bash $0"
-#  echo ""
-#  read -rp "Pulsa Enter para salir..."
-#  exit 1
-#else
-#  clear
-#  echo -e "\e[33mOK. Tenemos permisos sudo.\e[0m"
-#fi
+if [ "$EUID" -ne 0 ]; then
+  clear
+  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
+  echo ""
+  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
+  echo "   sudo $0"
+  echo "   sudo bash $0"
+  echo ""
+  read -rp "Pulsa Enter para salir..."
+  exit 1
+else
+  clear
+  echo -e "\e[33mOK. Tenemos permisos sudo.\e[0m"
+fi
 
 while true; do
     usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
