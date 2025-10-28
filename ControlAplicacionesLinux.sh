@@ -3,6 +3,19 @@
 # Preguntar contraseña de sudo al inicio
 sudo -v
 
+# Mantener activo el timestamp de sudo mientras el script se ejecute
+(
+    while true; do
+        sudo -v
+        sleep 60
+    done
+) &
+SUDO_KEEPALIVE_PID=$!
+
+# Asegurarse de matar el proceso de mantenimiento de sudo al salir
+trap "kill $SUDO_KEEPALIVE_PID" EXIT
+
+
 #puedes añadir rutas adicionales en la seccion 2 y poner las rutas que quieres que busque software
 
 #VARIABLES PRINCIPALES
