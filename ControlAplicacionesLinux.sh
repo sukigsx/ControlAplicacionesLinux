@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Preguntar contraseña de sudo al inicio
+sudo -v
+
 #puedes añadir rutas adicionales en la seccion 2 y poner las rutas que quieres que busque software
 
 #VARIABLES PRINCIPALES
