@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#puedes añadir rutas adicionales en la seccion 2 y poner las rutas que quieres que busque software
+
 #VARIABLES PRINCIPALES
 # con export son las variables necesarias para exportar al los siguientes script
 #variables para el menu_info
@@ -316,14 +318,15 @@ while true; do
     # OPCIÓN 2: Configurar permisos manualmente
     # -------------------------------------------------------
     # Añadir rutas adicionales (binarios y lanzadores)
-rutas_adicionales=(
-    "/var/lib/flatpak/exports/bin"
-    "/home/$usuario/.local/share/flatpak/exports/bin"
-    "/var/lib/flatpak/exports/share/applications"
-    "/home/$usuario/.local/share/flatpak/exports/share/applications"
-    "/snap/bin"
-    "/home/$usuario/Applications/"
-)
+    rutas_adicionales=(
+        "/var/lib/flatpak/exports/bin"
+        "/home/$usuario/.local/share/flatpak/exports/bin"
+        "/var/lib/flatpak/exports/share/applications"
+        "/home/$usuario/.local/share/flatpak/exports/share/applications"
+        "/snap/bin"
+        "/home/$usuario/Applications/"
+    )
+
     apps_array=()
     IFS=: read -ra path_dirs <<< "$PATH"
     for fdir in "${rutas_adicionales[@]}"; do
