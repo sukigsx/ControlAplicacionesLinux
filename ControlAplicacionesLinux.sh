@@ -256,42 +256,75 @@ else
 fi
 
 while true; do
-    # 1. Seleccionar un usuario con login
     usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
         zenity --list --title="Diseñado por SUKIGSX" \
-        --text="Selecciona el usuario para aplicar los permisos de ejecución de las aplicaciones del sistema:" \
+        --text="Selecciona el usuario para administrar permisos de ejecución:" \
         --column="Usuario" --height=300 --width=300 \
         --ok-label="Seleccionar" --cancel-label="Salir" 2>/dev/null)
 
-    if [ -z "$usuario" ]; then
-        exit 0
+    [ -z "$usuario" ] && exit 0
+
+    # NUEVA VENTANA con botones
+    opcion_usuario=$(zenity --list --radiolist \
+        --title="Diseñado por SUKIGSX" \
+        --text="¿Qué deseas hacer para el usuario $usuario?" \
+        --column="Selecciona" --column="Acción" \
+        TRUE "Configurar permisos de aplicaciones" \
+        FALSE "Listar aplicaciones sin permiso de ejecución" \
+        --height=250 --width=500 \
+        --ok-label="Continuar" --cancel-label="Atras" 2>/dev/null)
+
+    [ -z "$opcion_usuario" ] && continue
+
+    # -------------------------------------------------------
+    # OPCIÓN 1: Listar aplicaciones sin permiso de ejecución
+    # -------------------------------------------------------
+    if [ "$opcion_usuario" == "Listar aplicaciones sin permiso de ejecución" ]; then
+        sin_permiso=()
+        IFS=: read -ra path_dirs <<< "$PATH"
+        for fdir in "${rutas_adicionales[@]}"; do
+            [ -d "$fdir" ] && path_dirs+=("$fdir")
+        done
+        for dir in "${path_dirs[@]}"; do
+            [ -d "$dir" ] || continue
+            while IFS= read -r file; do
+                if [ -f "$file" ] && [ -x "$file" ]; then
+                    acl_output=$(getfacl -p "$file" 2>/dev/null | grep "^user:$usuario:")
+                    if [ -n "$acl_output" ]; then
+                        permisos=$(echo "$acl_output" | awk -F: '{print $3}')
+                        [[ "$permisos" != *x* ]] && sin_permiso+=("$file")
+                    fi
+                fi
+            done < <(find "$dir" -maxdepth 1 -type f 2>/dev/null)
+        done
+
+        if [ ${#sin_permiso[@]} -eq 0 ]; then
+            zenity --info --title="Diseñado por SUKIGSX" \
+                   --text="El usuario $usuario tiene permiso de ejecución en todas las aplicaciones." \
+                   --width=400 --height=200 2>/dev/null
+        else
+	    zenity --info \
+  		--title="Aplicaciones sin permiso de ejecución" \
+  		--width=500 --height=500 \
+  		--text="El usuario $usuario NO tiene permiso de ejecución en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")"
+		--ok-label="Acertar" --cancel-label="" 2>/dev/null
+
+        fi
+        continue
     fi
 
-    # 2. Listar binarios y archivos .desktop
+    # -------------------------------------------------------
+    # OPCIÓN 2: Configurar permisos manualmente
+    # -------------------------------------------------------
     apps_array=()
     IFS=: read -ra path_dirs <<< "$PATH"
-
-    # Añadir rutas adicionales (binarios y lanzadores)
-    rutas_adicionales=(
-        "/var/lib/flatpak/exports/bin"
-        "/home/$usuario/.local/share/flatpak/exports/bin"
-        "/var/lib/flatpak/exports/share/applications"
-        "/home/$usuario/.local/share/flatpak/exports/share/applications"
-        "/snap/bin"
-        "/home/$usuario/Applications/"
-    )
-
     for fdir in "${rutas_adicionales[@]}"; do
-        if [ -d "$fdir" ]; then
-            path_dirs+=("$fdir")
-        fi
+        [ -d "$fdir" ] && path_dirs+=("$fdir")
     done
 
-    # Buscar binarios y .desktop
     for dir in "${path_dirs[@]}"; do
         if [ -d "$dir" ]; then
             while IFS= read -r file; do
-                # Incluir ejecutables y .desktop
                 if { [ -x "$file" ] && [ -f "$file" ]; } || [[ "$file" == *.desktop ]]; then
                     apps_array+=("$file")
                 fi
@@ -299,83 +332,60 @@ while true; do
         fi
     done
 
-    # Ordenar y eliminar duplicados
     mapfile -t apps_array < <(printf "%s\n" "${apps_array[@]}" | sort -u)
 
-    # 3. Convertir la lista en formato Zenity
     zenity_list=()
     for app in "${apps_array[@]}"; do
         zenity_list+=("$app" "$app" FALSE)
     done
 
-    # Mostrar lista de binarios/.desktop
     selected_apps=$(zenity --list --checklist \
         --title="Diseñado por SUKIGSX" \
-        --text="Selecciona las aplicaciones marcando las casillas.\n- Puedes seleccionar una o varias\n- También puedes buscar aplicaciones escribiendo directamente su nombre" \
+        --text="Selecciona las aplicaciones marcando las casillas.\nPuedes buscar escribiendo el nombre:" \
         --column="Selecciona" --column="Archivo" --column="Seleccionada" \
         "${zenity_list[@]}" \
         --height=500 --width=800 \
         --ok-label="Seleccionar" --cancel-label="Atrás" 2>/dev/null)
 
-    if [ -z "$selected_apps" ]; then
-        continue
-    fi
+    [ -z "$selected_apps" ] && continue
 
-    # 4. Seleccionar acción
-    action=$(zenity --list --title="Diseñado por SUKIGSX" \
-        --text="Aplicaciones seleccionadas para el usuario $usuario:\n\n$(echo "$selected_apps" | tr '|' '\n' | sed 's/^ *//;s/ *$//')\n" \
-        --radiolist --column="Selecciona" --column="Acción" \
+    action=$(zenity --list --radiolist \
+        --title="Diseñado por SUKIGSX" \
+        --text="Aplicaciones seleccionadas para el usuario $usuario:" \
+        --column="Selecciona" --column="Acción" \
         TRUE "Quitar permisos de ejecución (rw-)" \
         FALSE "Dar permisos de ejecución (rwx)" \
         --ok-label="Aplicar" --cancel-label="Salir" 2>/dev/null)
 
-    if [ -z "$action" ]; then
-        exit 0
-    fi
+    [ -z "$action" ] && continue
 
-    # 5. Aplicar ACL a cada archivo seleccionado
     IFS="|" read -ra apps_selected <<< "$selected_apps"
 
     for app in "${apps_selected[@]}"; do
         target="$app"
-
-        # Si es un archivo .desktop, buscar su "Exec="
         if [[ "$app" == *.desktop ]]; then
             exec_line=$(grep -m1 "^Exec=" "$app" | cut -d'=' -f2- | awk '{print $1}')
             if [ -n "$exec_line" ]; then
-                # Si usa Flatpak
                 if command -v flatpak &>/dev/null && [[ "$exec_line" == flatpak* ]]; then
                     flatpak_id=$(echo "$exec_line" | awk '{print $2}')
-                    if [ -x "/var/lib/flatpak/exports/bin/$flatpak_id" ]; then
-                        target="/var/lib/flatpak/exports/bin/$flatpak_id"
-                    elif [ -x "/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id" ]; then
-                        target="/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id"
-                    fi
+                    [ -x "/var/lib/flatpak/exports/bin/$flatpak_id" ] && target="/var/lib/flatpak/exports/bin/$flatpak_id"
+                    [ -x "/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id" ] && target="/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id"
                 elif [ -x "$exec_line" ]; then
                     target="$exec_line"
                 fi
             fi
         fi
 
-        # Resolver enlace simbólico
         real_app=$(readlink -f "$target")
 
-        # Aplicar permisos ACL
         if [ "$action" == "Quitar permisos de ejecución (rw-)" ]; then
             sudo setfacl -m u:"$usuario":rw- "$real_app"
-            if [[ "$real_app" == *.AppImage ]]; then
-                sudo chown root:root $real_app
-            fi
+            [[ "$real_app" == *.AppImage ]] && sudo chown root:root "$real_app"
         else
             sudo setfacl -m u:"$usuario":rwx "$real_app"
-            if [[ "$real_app" == *.AppImage ]]; then
-                sudo chown $usuario:$usuario $real_app
-            fi
+            [[ "$real_app" == *.AppImage ]] && sudo chown "$usuario":"$usuario" "$real_app"
         fi
     done
 
-    # 6. Confirmación
     zenity --info --text="Permisos ACL aplicados correctamente al usuario $usuario." 2>/dev/null
-
-    exit 0
 done
