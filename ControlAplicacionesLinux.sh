@@ -1,37 +1,5 @@
 #!/bin/bash
 
-#-----------
-set -euo pipefail
-
-# Pedir la contraseña sudo (si hace falta) y validar
-if ! sudo -v; then
-  echo "No se pudo obtener permiso sudo. Abortando."
-  exit 1
-fi
-
-# Mantenemos el timestamp de sudo en segundo plano (para evitar re-prompt)
-# Guardamos el PID para matar el proceso al salir
-_keep_sudo_alive() {
-  while true; do
-    sudo -n true
-    sleep 60
-  done
-}
-
-_keep_sudo_alive &
-SUDO_KEEPALIVE_PID=$!
-
-# Aseguramos que al salir se mate el keepalive
-cleanup() {
-  kill "${SUDO_KEEPALIVE_PID}" 2>/dev/null || true
-  sudo -k 2>/dev/null || true  # invalidar timestamp por seguridad
-}
-trap cleanup EXIT
-
-##############
-
-
-
 #puedes añadir rutas adicionales en la seccion 2 y poner las rutas que quieres que busque software
 
 #VARIABLES PRINCIPALES
@@ -230,42 +198,42 @@ fi
 
 
 clear
-menu_info
-conexion
-if [ $conexion = "SI" ]; then
-    actualizar_script
-    if [ $actualizado = "SI" ]; then
-        software_necesario
-        if [ $software = "SI" ]; then
-            export software="SI"
-            export conexion="SI"
-            export actualizado="SI"
-            #bash $ruta_ejecucion/ #PON LA RUTA
-        else
-            echo ""
-        fi
-    else
-        software_necesario
-        if [ $software = "SI" ]; then
-            export software="SI"
-            export conexion="NO"
-            export actualizado="No se ha podido comprobar la actualizacion del script"
-            #bash $ruta_ejecucion/ #PON LA RUTA
-        else
-            echo ""
-        fi
-    fi
-else
-    software_necesario
-    if [ $software = "SI" ]; then
-        export software="SI"
-        export conexion="NO"
-        export actualizado="No se ha podido comprobar la actualizacion del script"
-        #bash $ruta_ejecucion/ #PON LA RUTA
-    else
-        echo ""
-    fi
-fi
+#menu_info
+#conexion
+#if [ $conexion = "SI" ]; then
+#    actualizar_script
+#    if [ $actualizado = "SI" ]; then
+#        software_necesario
+#        if [ $software = "SI" ]; then
+#            export software="SI"
+#            export conexion="SI"
+#            export actualizado="SI"
+#            #bash $ruta_ejecucion/ #PON LA RUTA
+#        else
+#            echo ""
+#        fi
+#    else
+#        software_necesario
+#        if [ $software = "SI" ]; then
+#            export software="SI"
+#            export conexion="NO"
+#            export actualizado="No se ha podido comprobar la actualizacion del script"
+#            #bash $ruta_ejecucion/ #PON LA RUTA
+#        else
+#            echo ""
+#        fi
+#    fi
+#else
+#    software_necesario
+#    if [ $software = "SI" ]; then
+#        export software="SI"
+#        export conexion="NO"
+#        export actualizado="No se ha podido comprobar la actualizacion del script"
+#        #bash $ruta_ejecucion/ #PON LA RUTA
+#    else
+#        echo ""
+#    fi
+#fi
 
 
 # Evitar advertencias de GTK/Zenity en la consola
