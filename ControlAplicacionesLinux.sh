@@ -280,6 +280,14 @@ while true; do
     # -------------------------------------------------------
     # OPCIÓN 1: Listar aplicaciones sin permiso de ejecución
     # -------------------------------------------------------
+    rutas_adicionales=(
+        "/var/lib/flatpak/exports/bin"
+        "/home/$usuario/.local/share/flatpak/exports/bin"
+        "/var/lib/flatpak/exports/share/applications"
+        "/home/$usuario/.local/share/flatpak/exports/share/applications"
+        "/snap/bin"
+        "/home/$usuario/Applications/"
+    )
     if [ "$opcion_usuario" == "Listar aplicaciones sin permiso de ejecución" ]; then
         sin_permiso=()
         IFS=: read -ra path_dirs <<< "$PATH"
