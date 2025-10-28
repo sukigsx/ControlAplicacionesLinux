@@ -1,19 +1,35 @@
 #!/bin/bash
 
-# Preguntar contraseña de sudo al inicio
-sudo -v
+#-----------
+set -euo pipefail
 
-# Mantener activo el timestamp de sudo mientras el script se ejecute
-(
-    while true; do
-        sudo -v
-        sleep 60
-    done
-) &
+# Pedir la contraseña sudo (si hace falta) y validar
+if ! sudo -v; then
+  echo "No se pudo obtener permiso sudo. Abortando."
+  exit 1
+fi
+
+# Mantenemos el timestamp de sudo en segundo plano (para evitar re-prompt)
+# Guardamos el PID para matar el proceso al salir
+_keep_sudo_alive() {
+  while true; do
+    sudo -n true
+    sleep 60
+  done
+}
+
+_keep_sudo_alive &
 SUDO_KEEPALIVE_PID=$!
 
-# Asegurarse de matar el proceso de mantenimiento de sudo al salir
-trap "kill $SUDO_KEEPALIVE_PID" EXIT
+# Aseguramos que al salir se mate el keepalive
+cleanup() {
+  kill "${SUDO_KEEPALIVE_PID}" 2>/dev/null || true
+  sudo -k 2>/dev/null || true  # invalidar timestamp por seguridad
+}
+trap cleanup EXIT
+
+##############
+
 
 
 #puedes añadir rutas adicionales en la seccion 2 y poner las rutas que quieres que busque software
@@ -257,20 +273,20 @@ export ZENITY_NO_GTK_WARNINGS=1
 
 # Comprobar si el script se ejecuta con privilegios de root
 clear
-if [ "$EUID" -ne 0 ]; then
-  clear
-  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
-  echo ""
-  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
-  echo "   sudo $0"
-  echo "   sudo bash $0"
-  echo ""
-  read -rp "Pulsa Enter para salir..."
-  exit 1
-else
-  clear
-  echo -e "\e[33mOK. Tenemos permisos sudo.\e[0m"
-fi
+#if [ "$EUID" -ne 0 ]; then
+#  clear
+#  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
+#  echo ""
+#  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
+#  echo "   sudo $0"
+#  echo "   sudo bash $0"
+#  echo ""
+#  read -rp "Pulsa Enter para salir..."
+#  exit 1
+#else
+#  clear
+#  echo -e "\e[33mOK. Tenemos permisos sudo.\e[0m"
+#fi
 
 while true; do
     usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
