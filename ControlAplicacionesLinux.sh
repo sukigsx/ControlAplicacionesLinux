@@ -37,7 +37,7 @@ DireccionGithub="https://github.com/sukigsx/ControlAplicacionesLinux" #contiene 
         [sed]="sed"
     )
 
-rutas_adicionales=(
+export rutas_adicionales=(
     "/var/lib/flatpak/exports/bin"
     "/home/$usuario/.local/share/flatpak/exports/bin"
     "/var/lib/flatpak/exports/share/applications"
