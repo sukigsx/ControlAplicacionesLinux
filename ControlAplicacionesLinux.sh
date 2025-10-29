@@ -339,7 +339,7 @@ while true; do
         "/snap/bin"
         "/home/$usuario/Applications/"
     )
-
+echo "este es el usuario = $usuario"; read p
     apps_array=()
     IFS=: read -ra path_dirs <<< "$PATH"
     for fdir in "${rutas_adicionales[@]}"; do
