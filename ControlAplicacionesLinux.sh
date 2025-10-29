@@ -315,7 +315,7 @@ while true; do
 	    zenity --info \
   		--title="Aplicaciones sin permiso de ejecución" \
   		--width=500 --height=500 \
-  		--text="El usuario $usuario NO tiene permiso de ejecución en los siguientes archivos:\n\n${sin_permiso[@]}"
+  		--text="El usuario $usuario NO tiene permiso de ejecución en los siguientes archivos:\n\n$sin_permiso[@]"
 		--ok-label="Acertar" --cancel-label="" 2>/dev/null
 #--text="El usuario $usuario NO tiene permiso de ejecución en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")"
         fi
