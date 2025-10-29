@@ -312,6 +312,7 @@ while true; do
                    --text="El usuario $usuario tiene permiso de ejecución en todas las aplicaciones." \
                    --width=400 --height=200 2>/dev/null
         else
+        echo "${sin_permiso[@]}"
 	    zenity --info \
   		--title="Aplicaciones sin permiso de ejecución" \
   		--width=500 --height=500 \
