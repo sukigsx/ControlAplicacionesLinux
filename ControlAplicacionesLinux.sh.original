@@ -256,9 +256,6 @@ else
   echo -e "\e[33mOK. Tenemos permisos sudo.\e[0m"
 fi
 
-#!/bin/bash
-# Diseñado por SUKIGSX - versión mejorada por ChatGPT
-
 while true; do
     usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
         zenity --list --title="Diseñado por SUKIGSX" \
@@ -276,7 +273,7 @@ while true; do
         TRUE "Configurar permisos de aplicaciones" \
         FALSE "Listar aplicaciones sin permiso de ejecución" \
         --height=250 --width=500 \
-        --ok-label="Continuar" --cancel-label="Atrás" 2>/dev/null)
+        --ok-label="Continuar" --cancel-label="Atras" 2>/dev/null)
 
     [ -z "$opcion_usuario" ] && continue
 
@@ -291,39 +288,36 @@ while true; do
         "/snap/bin"
         "/home/$usuario/Applications/"
     )
-
     if [ "$opcion_usuario" == "Listar aplicaciones sin permiso de ejecución" ]; then
         sin_permiso=()
         IFS=: read -ra path_dirs <<< "$PATH"
         for fdir in "${rutas_adicionales[@]}"; do
             [ -d "$fdir" ] && path_dirs+=("$fdir")
         done
-
         for dir in "${path_dirs[@]}"; do
             [ -d "$dir" ] || continue
             while IFS= read -r file; do
-                [ -f "$file" ] || continue
-                [ -x "$file" ] || continue
-                acl_output=$(getfacl -p "$file" 2>/dev/null | grep "^user:$usuario:")
-                if [ -n "$acl_output" ]; then
-                    permisos=$(echo "$acl_output" | awk -F: '{print $3}')
-                    if [[ "$permisos" != *x* ]]; then
-                        sin_permiso+=("$file")
+                if [ -f "$file" ] && [ -x "$file" ]; then
+                    acl_output=$(getfacl -p "$file" 2>/dev/null | grep "^user:$usuario:")
+                    if [ -n "$acl_output" ]; then
+                        permisos=$(echo "$acl_output" | awk -F: '{print $3}')
+                        [[ "$permisos" != *x* ]] && sin_permiso+=("$file")
                     fi
                 fi
-            done < <(find "$dir" -maxdepth 2 -type f 2>/dev/null)
+            done < <(find "$dir" -maxdepth 1 -type f 2>/dev/null)
         done
 
         if [ ${#sin_permiso[@]} -eq 0 ]; then
             zenity --info --title="Diseñado por SUKIGSX" \
-                   --text="El usuario $usuario tiene permiso de ejecución en todas las aplicaciones con ACL definidas." \
+                   --text="El usuario $usuario tiene permiso de ejecución en todas las aplicaciones." \
                    --width=400 --height=200 2>/dev/null
         else
-            zenity --info \
-                --title="Aplicaciones sin permiso de ejecución" \
-                --width=500 --height=500 \
-                --text="El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")" \
-                --ok-label="Aceptar" 2>/dev/null
+        echo "${sin_permiso[@]}"
+	    zenity --info \
+  		--title="Aplicaciones sin permiso de ejecución" \
+  		--width=500 --height=500 \
+  		--text="El usuario $usuario NO tiene permiso de ejecución en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")"
+		--ok-label="Acertar" --cancel-label="" 2>/dev/null
         fi
         continue
     fi
@@ -331,6 +325,7 @@ while true; do
     # -------------------------------------------------------
     # OPCIÓN 2: Configurar permisos manualmente
     # -------------------------------------------------------
+    # Añadir rutas adicionales (binarios y lanzadores)
     rutas_adicionales=(
         "/var/lib/flatpak/exports/bin"
         "/home/$usuario/.local/share/flatpak/exports/bin"
@@ -352,7 +347,7 @@ while true; do
                 if { [ -x "$file" ] && [ -f "$file" ]; } || [[ "$file" == *.desktop ]]; then
                     apps_array+=("$file")
                 fi
-            done < <(find "$dir" -maxdepth 2 \( -type f -o -type l \) 2>/dev/null)
+            done < <(find "$dir" -maxdepth 1 \( -type f -o -type l \) 2>/dev/null)
         fi
     done
 
@@ -387,8 +382,6 @@ while true; do
 
     for app in "${apps_selected[@]}"; do
         target="$app"
-
-        # Resolver .desktop → ejecutable real
         if [[ "$app" == *.desktop ]]; then
             exec_line=$(grep -m1 "^Exec=" "$app" | cut -d'=' -f2- | awk '{print $1}')
             if [ -n "$exec_line" ]; then
@@ -404,17 +397,6 @@ while true; do
 
         real_app=$(readlink -f "$target")
 
-        # Detectar enlaces simbólicos de Snap
-        if [[ "$real_app" == "/usr/bin/snap" && "$target" == /snap/bin/* ]]; then
-            zenity --warning \
-                --title="Aviso sobre aplicaciones Snap" \
-                --text="El archivo $target es un enlace simbólico a /usr/bin/snap.\n\
-Todos los programas Snap comparten este mismo ejecutable.\n\
-Por lo tanto, cualquier cambio de permisos afecta a todos los snaps." \
-                --width=450 --height=200 2>/dev/null
-        fi
-
-        # Aplicar permisos según selección
         if [ "$action" == "Quitar permisos de ejecución (rw-)" ]; then
             sudo setfacl -m u:"$usuario":rw- "$real_app"
             [[ "$real_app" == *.AppImage ]] && sudo chown root:root "$real_app"
@@ -424,7 +406,5 @@ Por lo tanto, cualquier cambio de permisos afecta a todos los snaps." \
         fi
     done
 
-    zenity --info --title="Diseñado por SUKIGSX" \
-        --text="Permisos ACL aplicados correctamente al usuario $usuario." \
-        --width=400 --height=150 2>/dev/null
+    zenity --info --text="Permisos ACL aplicados correctamente al usuario $usuario." 2>/dev/null
 done
