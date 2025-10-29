@@ -338,6 +338,7 @@ while true; do
         "/home/$usuario/.local/share/flatpak/exports/share/applications"
         "/snap/bin"
         "/home/$usuario/Applications"
+        "/home/emma/Applications/"
     )
 echo "este es el usuario = $usuario"; read p
     apps_array=()
