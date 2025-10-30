@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#puedes añadir rutas adicionales en la seccion 2 y poner las rutas que quieres que busque software
+#puedes añadir rutas adicionales en la seccion 2 y en la seccion 1 y poner las rutas que quieres que busque software
 
 #VARIABLES PRINCIPALES
 # con export son las variables necesarias para exportar al los siguientes script
@@ -322,7 +322,7 @@ while true; do
             zenity --info \
                 --title="Aplicaciones sin permiso de ejecución" \
                 --width=500 --height=500 \
-                --text="El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")" \
+                --text="El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n\nPuede ser que no se muentren todos los que tengas bloqueados debido:\n\n1- enlaces simbolicos\n2-software instalado por snap\n\n$(printf '%s\n' "${sin_permiso[@]}")" \
                 --ok-label="Aceptar" 2>/dev/null
         fi
         continue
