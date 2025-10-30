@@ -254,10 +254,11 @@ if [ "$EUID" -ne 0 ]; then
 else
   clear
   echo ""
-  echo -e "${verde} Tenemos permisos sudo.${borra_colores}"
-  echo -e "${amarillo}Recuerda que si lo ejecutas en remoto por ssh:${borra_colores}"
-  echo -e "${azul}1.${borra_colores} conexion con -X para traer entorno grafico ssh -X usuario@ip"
-  echo -e "${azul}2.${borra_colores} La ejecucion sudo -E bash $0"
+  echo -e " Permiso de sudo ${verde}OK${borra_colores}"
+  echo ""
+  echo -e "${amarillo} Recuerda que si lo ejecutas en remoto por ssh:${borra_colores}"
+  echo -e "    ${azul}1.${borra_colores} conexion con -X para traer entorno grafico ssh -X usuario@ip"
+  echo -e "    ${azul}2.${borra_colores} La ejecucion sudo -E bash $0"
   echo ""
 fi
 
@@ -327,7 +328,7 @@ while true; do
             zenity --info \
                 --title="Aplicaciones sin permiso de ejecución" \
                 --width=500 --height=500 \
-                --text="Puede ser que no se muentren todos los que tengas bloqueados debido:\n1- Enlaces simbolicos\n2- Software instalado por snap\n\n El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n\n\n$(printf '%s\n' "${sin_permiso[@]}")" \
+                --text="Puede ser que no se muentren todos los que tengas bloqueados debido:\n1- Enlaces simbolicos\n2- Software instalado por snap\n\n El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n$(printf '%s\n' "${sin_permiso[@]}")" \
                 --ok-label="Aceptar" 2>/dev/null
         fi
         continue
