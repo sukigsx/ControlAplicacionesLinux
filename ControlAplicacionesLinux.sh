@@ -328,7 +328,7 @@ while true; do
             zenity --info \
                 --title="Aplicaciones sin permiso de ejecución" \
                 --width=500 --height=500 \
-                --text="Puede ser que no se muentren todos los que tengas bloqueados debido:\n1- Enlaces simbolicos\n2- Software instalado por snap\n\n El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n$(printf '%s\n' "${sin_permiso[@]}")" \
+                --text="Puede ser que no se muentren todos los que tengas bloqueados debido:\n1- Enlaces simbolicos\n2- Software instalado por snap\n\n El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")" \
                 --ok-label="Aceptar" 2>/dev/null
         fi
         continue
