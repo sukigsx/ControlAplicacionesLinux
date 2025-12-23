@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+
+
+
 #puedes añadir rutas adicionales en la seccion 2 y en la seccion 1 y poner las rutas que quieres que busque software
 
 #VARIABLES PRINCIPALES
@@ -59,6 +63,15 @@ echo ""
 sleep 1
 exit
 }
+
+clear
+if [ "$EUID" -ne 0 ]; then
+  echo ""
+  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
+  echo ""
+  exec sudo bash "$0" "$@"
+  echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
+fi
 
 menu_info(){
 # muestra el menu de sukigsx
