@@ -64,14 +64,7 @@ sleep 1
 exit
 }
 
-clear
-if [ "$EUID" -ne 0 ]; then
-  echo ""
-  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
-  echo ""
-  exec sudo bash "$0" "$@"
-  echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
-fi
+
 
 menu_info(){
 # muestra el menu de sukigsx
@@ -87,6 +80,15 @@ echo -e "${azul} Contacto:${borra_colores} (Correo $Correo) (Web $Web)${borra_co
 echo ""
 }
 
+clear
+menu_info
+if [ "$EUID" -ne 0 ]; then
+  echo ""
+  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
+  echo ""
+  exec sudo bash "$0" "$@"
+  echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
+fi
 
 actualizar_script(){
     # actualizar el script
@@ -253,7 +255,7 @@ fi
 export ZENITY_NO_GTK_WARNINGS=1
 
 # Comprobar si el script se ejecuta con privilegios de root
-clear
+
 #if [ "$EUID" -ne 0 ]; then
 #  echo ""
 #  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
