@@ -242,25 +242,44 @@ export ZENITY_NO_GTK_WARNINGS=1
 # Comprobar si el script se ejecuta con privilegios de root
 clear
 if [ "$EUID" -ne 0 ]; then
-  clear
-  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
+  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
   echo ""
-  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
-  echo "   sudo $0"
-  echo "   sudo bash $0"
-  echo ""
-  read -rp "Pulsa Enter para salir..."
-  exit 1
-else
-  clear
-  echo ""
-  echo -e " Permiso de sudo ${verde}OK${borra_colores}"
-  echo ""
-  echo -e "${amarillo} Recuerda que si lo ejecutas en remoto por ssh:${borra_colores}"
-  echo -e "    ${azul}1.${borra_colores} conexion con -X para traer entorno grafico ssh -X usuario@ip"
-  echo -e "    ${azul}2.${borra_colores} La ejecucion sudo -E bash $0"
-  echo ""
+  exec sudo bash "$0" "$@"
 fi
+
+echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
+
+
+
+
+
+
+
+
+
+
+
+
+#if [ "$EUID" -ne 0 ]; then
+#  clear
+#  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
+#  echo ""
+#  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
+#  echo "   sudo $0"
+#  echo "   sudo bash $0"
+#  echo ""
+#  read -rp "Pulsa Enter para salir..."
+#  exit 1
+#else
+#  clear
+#  echo ""
+#  echo -e " Permiso de sudo ${verde}OK${borra_colores}"
+#  echo ""
+#  echo -e "${amarillo} Recuerda que si lo ejecutas en remoto por ssh:${borra_colores}"
+#  echo -e "    ${azul}1.${borra_colores} conexion con -X para traer entorno grafico ssh -X usuario@ip"
+#  echo -e "    ${azul}2.${borra_colores} La ejecucion sudo -E bash $0"
+#  echo ""
+#fi
 
 #!/bin/bash
 # Diseñado por SUKIGSX - versión mejorada por ChatGPT
