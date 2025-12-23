@@ -242,23 +242,12 @@ export ZENITY_NO_GTK_WARNINGS=1
 # Comprobar si el script se ejecuta con privilegios de root
 clear
 if [ "$EUID" -ne 0 ]; then
+  echo ""
   echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
   echo ""
   exec sudo bash "$0" "$@"
+  echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
 fi
-
-echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
-
-
-
-
-
-
-
-
-
-
-
 
 #if [ "$EUID" -ne 0 ]; then
 #  clear
