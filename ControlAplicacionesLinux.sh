@@ -254,40 +254,6 @@ fi
 # Evitar advertencias de GTK/Zenity en la consola
 export ZENITY_NO_GTK_WARNINGS=1
 
-# Comprobar si el script se ejecuta con privilegios de root
-
-#if [ "$EUID" -ne 0 ]; then
-#  echo ""
-#  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
-#  echo ""
-#  exec sudo bash "$0" "$@"
-#  echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
-#fi
-
-#if [ "$EUID" -ne 0 ]; then
-#  clear
-#  echo -e "\e[31mEste script necesita permisos de sudo.\e[0m"
-#  echo ""
-#  echo -e "\e[33mPor favor, ejecútalo con:\e[0m"
-#  echo "   sudo $0"
-#  echo "   sudo bash $0"
-#  echo ""
-#  read -rp "Pulsa Enter para salir..."
-#  exit 1
-#else
-#  clear
-#  echo ""
-#  echo -e " Permiso de sudo ${verde}OK${borra_colores}"
-#  echo ""
-#  echo -e "${amarillo} Recuerda que si lo ejecutas en remoto por ssh:${borra_colores}"
-#  echo -e "    ${azul}1.${borra_colores} conexion con -X para traer entorno grafico ssh -X usuario@ip"
-#  echo -e "    ${azul}2.${borra_colores} La ejecucion sudo -E bash $0"
-#  echo ""
-#fi
-
-#!/bin/bash
-# Diseñado por SUKIGSX - versión mejorada por ChatGPT
-
 while true; do
     usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
         zenity --list --title="Diseñado por SUKIGSX" \
