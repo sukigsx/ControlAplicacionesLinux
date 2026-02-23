@@ -1,23 +1,18 @@
-#!/bin/bash
-
-
-
-
-
-#puedes añadir rutas adicionales en la seccion 2 y en la seccion 1 y poner las rutas que quieres que busque software
+#!/usr/bin/env bash
 
 #VARIABLES PRINCIPALES
 # con export son las variables necesarias para exportar al los siguientes script
 #variables para el menu_info
 
-export NombreScript="$0"
-export DescripcionDelScript="Controla las aplicaciones que puede ejecutar uno o varios usuarios del sistema."
-export Correo="scripts@mbbsistemas.com"
+export NombreScript="Ejecutar_scripts"
+export DescripcionDelScript="Control interactivo de tus scripts"
+export Correo="scripts@mbbsistemas.es"
 export Web="https://repositorio.mbbsistemas.es"
-export version="1.11"
+export version="1.0"
 conexion="Sin comprobar"
 software="Sin comprobar"
 actualizado="No se ha podido comprobar la actualizacion del script"
+paqueteria="No detectada"
 
 # VARIABLE QUE RECOJEN LAS RUTAS
 ruta_ejecucion=$(dirname "$(readlink -f "$0")") #es la ruta de ejecucion del script sin la / al final
@@ -26,6 +21,7 @@ ruta_escritorio=$(xdg-user-dir DESKTOP) #es la ruta de tu escritorio sin la / al
 # VARIABLES PARA LA ACTUALIZAION CON GITHUB
 NombreScriptActualizar="ControlAplicacionesLinux.sh" #contiene el nombre del script para poder actualizar desde github
 DireccionGithub="https://github.com/sukigsx/ControlAplicacionesLinux" #contiene la direccion de github para actualizar el script
+nombre_carpeta_repositorio="ControlAplicacionesLinux" #poner el nombre de la carpeta cuando se clona el repo para poder eliminarla
 
 #VARIABLES DE SOFTWARE NECESARIO
 # Asociamos comandos con el paquete que los contiene [comando a comprobar]="paquete a instalar"
@@ -33,14 +29,19 @@ DireccionGithub="https://github.com/sukigsx/ControlAplicacionesLinux" #contiene 
     requeridos=(
         [git]="git"
         [nano]="nano"
+        [diff]="diff"
+        [sudo]="sudo"
+        [ping]="ping"
         [curl]="curl"
+        [grep]="grep"
+        [jq]="jq"
+        [sed]="sed"
+        [wget]="wget"
+        [xdg-user-dir]="xdg-user-dirs" #este es para que pueda pillar la ruta del escritorio
         [konsole]="konsole"
         [getfacl]="acl"
         [zenity]="zenity"
-        [diff]="diff"
-        [ping]="ping"
         [tr]="coreutils"
-        [sed]="sed"
     )
 
 #colores
@@ -64,31 +65,21 @@ sleep 1
 exit
 }
 
-
-
 menu_info(){
 # muestra el menu de sukigsx
 echo ""
-echo -e "${rosa}            _    _                  ${azul}   Nombre del script${borra_colores} ($NombreScript)"
-echo -e "${rosa}  ___ _   _| | _(_) __ _ _____  __  ${azul}   Descripcion${borra_colores} ($DescripcionDelScript)"
+echo -e "${rosa}            _    _                  ${azul}   Nombre del script${borra_colores} $NombreScript"
+echo -e "${rosa}  ___ _   _| | _(_) __ _ _____  __  ${azul}   Descripcion${borra_colores} $DescripcionDelScript"
 echo -e "${rosa} / __| | | | |/ / |/ _\ / __\ \/ /  ${azul}   Version            =${borra_colores} $version"
 echo -e "${rosa} \__ \ |_| |   <| | (_| \__ \>  <   ${azul}   Conexion Internet  =${borra_colores} $conexion"
 echo -e "${rosa} |___/\__,_|_|\_\_|\__, |___/_/\_\  ${azul}   Software necesario =${borra_colores} $software"
 echo -e "${rosa}                  |___/             ${azul}   Actualizado        =${borra_colores} $actualizado"
+echo -e "${rosa}                                    ${azul}   Sistema paqueteria =${borra_colores} $paqueteria"
 echo -e ""
-echo -e "${azul} Contacto:${borra_colores} (Correo $Correo) (Web $Web)${borra_colores}"
+echo -e "${azul} Contacto:${borra_colores} ( Correo${rosa} $Correo${borra_colores} ) ( Web${rosa} $Web${borra_colores} )${borra_colores}"
 echo ""
 }
 
-clear
-menu_info
-if [ "$EUID" -ne 0 ]; then
-  echo ""
-  echo -e "${amarillo} Este script necesita permisos de sudo${borra_colores}"
-  echo ""
-  exec sudo bash "$0" "$@"
-  echo -e "${verde} Ejecutando como root${borra_colores}"; sleep 2
-fi
 
 actualizar_script(){
     # actualizar el script
@@ -122,7 +113,7 @@ actualizar_script(){
         chmod -R +w /tmp/comprobar
         rm -R /tmp/comprobar
         echo ""
-        echo -e "${amarillo} El script se ha actualizado, es necesario cargarlo de nuevo.${borra_colores}"
+        echo -e "${verde} El script se ha actualizado.${amarillo} Es necesario cargarlo de nuevo.${borra_colores}"
         echo ""
         sleep 2
         exit
@@ -136,40 +127,48 @@ software_necesario(){
 #   conexion a internet
 #   la paleta de colores
 #   software: which
-
+paqueteria
 echo ""
 echo -e "${azul} Comprobando el software necesario.${borra_colores}"
 echo ""
 #which git diff ping figlet xdotool wmctrl nano fzf
 #########software="which git diff ping figlet nano gdebi curl konsole" #ponemos el foftware a instalar separado por espacion dentro de las comillas ( soft1 soft2 soft3 etc )
 for comando in "${!requeridos[@]}"; do
-        which $comando &>/dev/null
+        command -v $comando &>/dev/null
         sino=$?
         contador=1
         while [ $sino -ne 0 ]; do
             if [ $contador -ge 4 ] || [ "$conexion" = "no" ]; then
                 clear
-                echo ""
+                menu_info
+                echo -e " ${amarillo}NO se puede ejecutar el script sin los paquetes necesarios ${rojo}${requeridos[$comando]}${amarillo}.${borra_colores}"
                 echo -e " ${amarillo}NO se ha podido instalar ${rojo}${requeridos[$comando]}${amarillo}.${borra_colores}"
-                echo -e " ${amarillo}Inténtelo usted con: (${borra_colores}sudo apt install ${requeridos[$comando]}${amarillo})${borra_colores}"
+                echo -e " ${amarillo}Inténtelo usted con: (${borra_colores}$instalar${requeridos[$comando]}${amarillo})${borra_colores}"
                 echo -e ""
-                echo -e " ${rojo}No se puede ejecutar el script sin el software necesario.${borra_colores}"
-                echo ""; read p
+                echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
+                for elemento in "${requeridos[@]}"; do
+                    echo -e "     $elemento"
+                done
+                echo ""
+                echo -e " ${rojo}No se puede ejecutar el script sin todo el software necesario.${borra_colores}"
                 echo ""
                 exit 1
             else
+                echo -e "${amarillo} Se necesita instalar ${borra_colores}$comando${amarillo} para la ejecucion del script${borra_colores}"
+                ### check_root
                 echo " Instalando ${requeridos[$comando]}. Intento $contador/3."
-                sudo apt install ${requeridos[$comando]} -y &>/dev/null
+                $instalar ${requeridos[$comando]} &>/dev/null
                 let "contador=contador+1"
-                which $comando &>/dev/null
+                command -v $comando &>/dev/null
                 sino=$?
             fi
         done
-        echo -e " [${verde}ok${borra_colores}] $comando (${requeridos[$comando]})."; software="SI"
+        echo -e " [${verde}ok${borra_colores}] $comando (${requeridos[$comando]})."
     done
 
     echo ""
     echo -e "${azul} Todo el software ${verde}OK${borra_colores}"
+    software="SI"
     sleep 2
 }
 
@@ -193,6 +192,104 @@ else
 fi
 }
 
+# Función que comprueba si se ejecuta como root
+check_root() {
+    #clear
+    #menu_info
+  if [ "$EUID" -ne 0 ]; then
+    #echo ""
+    #echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
+
+    # Pedir contraseña para sudo
+    #echo -e ""
+
+    # Validar contraseña mediante sudo -v (verifica sin ejecutar comando)
+    if sudo -v; then
+      echo ""
+      echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
+      # Reejecuta el script como root
+      #exec sudo "$0" "$@"
+    else
+      clear
+      menu_info
+      echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
+      echo ""
+      echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
+      for elemento in "${requeridos[@]}"; do
+        echo -e "     $elemento"
+      done
+      echo ""
+      echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
+     echo ""; exit
+    fi
+  fi
+}
+
+#funcion de detectar sistema de paquetado para instalar
+paqueteria(){
+echo -e "${azul} Detectando sistema de paquetería...${borra_colores}"
+echo ""
+
+if command -v apt >/dev/null 2>&1; then
+    echo -e "${verde} Sistema de paquetería detectado: APT (Debian, Ubuntu, Mint, etc.)${borra_colores}"
+    instalar="sudo apt install -y "
+    paqueteria="apt"
+
+elif command -v dnf >/dev/null 2>&1; then
+    echo -e "${cerde} Sistema de paquetería detectado: DNF (Fedora, RHEL, Rocky, AlmaLinux)${borra_colores}"
+    instalar="sudo dnf install -y "
+    paqueteria="dnf"
+
+elif command -v yum >/dev/null 2>&1; then
+    echo -e "${verde}Sistema de paquetería detectado: YUM (CentOS, RHEL antiguos)${borra_colores}"
+    instalar="sudo yum install -y "
+    paqueteria="yum"
+
+elif command -v pacman >/dev/null 2>&1; then
+    echo -e "${verde} Sistema de paquetería detectado: Pacman (Arch Linux, Manjaro)${borra_colores}"
+    instalar="sudo pacman -S --noconfirm "
+    paqueteria="pacman"
+
+elif command -v zypper >/dev/null 2>&1; then
+    echo -e "${verde} Sistema de paquetería detectado: Zypper (openSUSE)${borra_colores}"
+    instalar="sudo zypper install -y "
+    paqueteria="zypper"
+
+elif command -v apk >/dev/null 2>&1; then
+    echo -e "${verde}Sistema de paquetería detectado: APK (Alpine Linux)${borra_colores}"
+    instalar="sudo apk add --no-interactive "
+    paqueteria="apk"
+
+elif command -v emerge >/dev/null 2>&1; then
+    echo -e "${verde}Sistema de paquetería detectado: Portage (Gentoo)${borra_colores}"
+    instalar="sudo emerge -av "
+    paqueteria="emerge"
+
+else
+    echo -e "${amarillo} No se pudo detectar un sistema de paquetería conocido.${borra_colores}"
+    paqueteria="${rojo}Desconocido${borra_colores}"
+fi
+sleep 2
+}
+
+
+#comprobar si se ejecuta en una terminal bash
+terminal_bash() {
+
+    shell_actual="$(ps -p $$ -o comm=)"
+
+    if [ "$shell_actual" != "bash" ]; then
+        echo -e "${amarillo} Este script ${rojo}NO${amarillo} se está ejecutando en Bash.${borra_colores}"
+        echo -e "   Shell detectado: ${rojo}$shell_actual${borra_colores}"
+        echo -e "   Puede ocasionar problemas ya que solo está pensado para bash."
+        echo -e "   ${rojo}No${borra_colores} se procede con la instalación ni la ejecución."
+        echo ""
+        echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
+        echo ""
+        exit 1
+    fi
+}
+
 #logica de arranque
 #variables de resultado $conexion $software $actualizado
 #funciones actualizar_script, conexion, software_necesario
@@ -211,15 +308,15 @@ fi
 #        si=ejecuta, variables software="SI", conexion="NO", actualizado="No se ha podiso comprobar actualizacion de script"
 #        no=Ya sale solo desde la funcion
 
-
 clear
 menu_info
 conexion
 if [ $conexion = "SI" ]; then
     actualizar_script
     if [ $actualizado = "SI" ]; then
+        terminal_bash
         software_necesario
-        if [ $software = "SI" ]; then
+        if [ "$software" = "SI" ]; then
             export software="SI"
             export conexion="SI"
             export actualizado="SI"
@@ -228,6 +325,7 @@ if [ $conexion = "SI" ]; then
             echo ""
         fi
     else
+        terminal_bash
         software_necesario
         if [ $software = "SI" ]; then
             export software="SI"
@@ -250,6 +348,10 @@ else
     fi
 fi
 
+clear
+
+
+## EMPIEZA LO GORDO ##
 
 # Evitar advertencias de GTK/Zenity en la consola
 export ZENITY_NO_GTK_WARNINGS=1
