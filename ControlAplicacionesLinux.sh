@@ -350,6 +350,7 @@ fi
 
 clear
 
+check_root
 
 ## EMPIEZA LO GORDO ##
 
