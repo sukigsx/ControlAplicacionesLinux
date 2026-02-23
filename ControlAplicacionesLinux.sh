@@ -214,11 +214,11 @@ check_root() {
       menu_info
       echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
       echo ""
-      echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
-      for elemento in "${requeridos[@]}"; do
-        echo -e "     $elemento"
-      done
-      echo ""
+      #echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
+      #for elemento in "${requeridos[@]}"; do
+      #  echo -e "     $elemento"
+      #done
+      #echo ""
       echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
      echo ""; exit
     fi
