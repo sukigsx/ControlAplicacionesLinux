@@ -354,7 +354,7 @@ check_root
 
 zenity --info --title="Estado" --text="Zenity correcto" --timeout=3 > /dev/null 2>&1
 #zenity --info --title="Estado" --text="Zenity correcto" > /dev/null 2>&1
-if [ ! $? = 0 ]; then
+if [ ! $? = 5 ]; then
     echo -e ""
     echo -e "${rojo} Fallo en la ejecucion de entorno grafico.${borra_colores} Posibles causas:"
     echo -e ""
