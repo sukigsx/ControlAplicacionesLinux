@@ -355,7 +355,7 @@ check_root
 zenity --info --title="Estado" --text="Zenity correcto" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
     echo -e ""
-    echo -e "${rojo} Fallo en la ejecucion de entorno grafico.${borra_colores} posibles causas:"
+    echo -e "${rojo} Fallo en la ejecucion de entorno grafico.${borra_colores} Posibles causas:"
     echo -e ""
     echo -e "${azul}   -${borra_colores} Si lo estas ejecutando en una terminal de ssh: ssh -Y usuario@ip_del_servidor"
     echo -e "${azul}   -${borra_colores} Tienes que tener habilitadas las opciones siguientes opciones en tu server ssh"
@@ -363,9 +363,10 @@ if [ ! $? = 0 ]; then
     echo -e "${azul}       -${borra_colores} X11UseLocalhost yes"
     echo -e "${azul}       -${borra_colores} X11DisplayOffset 10"
     echo -e "${azul}       -${borra_colores} reiniciar el servidor ssh con los cambios"
-    echo -e "${azul}       Que estan dentro de /etc/ssh/sshd_config"
-    echo -e ""
+    echo -e "       Que estan dentro de /etc/ssh/sshd_config"
+    echo -e "${verde}"
     read -p " Pulsa una tecla para continuar" p
+    echo -e "${borra_colores}"
     exit
 fi
 
