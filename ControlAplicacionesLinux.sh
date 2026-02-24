@@ -352,8 +352,10 @@ clear
 
 check_root
 
-zenity --info --title="Estado" --text="Zenity correcto"
-read p
+zenity --info --title="Estado" --text="Zenity correcto" > /dev/null 2>&1
+if [ ! $? = 0 ]; then
+    echo "error de ejecucion"; sleep 3
+fi
 
 ## EMPIEZA LO GORDO ##
 
