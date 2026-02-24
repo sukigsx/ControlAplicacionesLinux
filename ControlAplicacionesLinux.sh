@@ -526,3 +526,4 @@ Por lo tanto, cualquier cambio de permisos afecta a todos los snaps." \
         --text="Permisos ACL aplicados correctamente al usuario $usuario." \
         --width=400 --height=150 2>/dev/null
 done
+read p
