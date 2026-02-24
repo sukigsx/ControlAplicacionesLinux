@@ -352,7 +352,7 @@ clear
 
 check_root
 
-zenity --notification --text="Zenity correcto" --timeout=0.1 > /dev/null 2>&1
+zenity --info --title="Estado" --text="Zenity correcto" --timeout=3 > /dev/null 2>&1
 #zenity --info --title="Estado" --text="Zenity correcto" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
     echo -e ""
