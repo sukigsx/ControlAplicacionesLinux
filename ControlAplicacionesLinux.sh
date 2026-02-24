@@ -208,7 +208,7 @@ check_root() {
       echo ""
       echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
       # Reejecuta el script como root
-      #exec sudo "$0" "$@"
+      exec sudo -E "$0" "$@"
     else
       clear
       menu_info
