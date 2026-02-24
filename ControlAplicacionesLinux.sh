@@ -193,7 +193,7 @@ fi
 }
 
 # Función que comprueba si se ejecuta como root
-cccheck_root() {
+check_root() {
     #clear
     menu_info
   if [ "$EUID" -ne 0 ]; then
@@ -204,7 +204,7 @@ cccheck_root() {
     #echo -e ""
 
     # Validar contraseña mediante sudo -v (verifica sin ejecutar comando)
-    if sudo -v; then
+    if sudo -E -v; then
       echo ""
       echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
       # Reejecuta el script como root
@@ -225,7 +225,7 @@ cccheck_root() {
   fi
 }
 
-check_root() {
+cccheck_root() {
     #clear
     menu_info
     if [ "$EUID" -ne 0 ]; then
