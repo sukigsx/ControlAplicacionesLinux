@@ -204,11 +204,11 @@ check_root() {
     #echo -e ""
 
     # Validar contraseña mediante sudo -v (verifica sin ejecutar comando)
-    if sudo -E -v; then
+    if sudo -v; then
       echo ""
       echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
       # Reejecuta el script como root
-      #exec sudo -E "$0" "$@"
+      exec sudo -E "$0" "$@"
     else
       clear
       menu_info
