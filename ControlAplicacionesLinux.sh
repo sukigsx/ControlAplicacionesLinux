@@ -193,7 +193,7 @@ fi
 }
 
 # Función que comprueba si se ejecuta como root
-check_root() {
+cccheck_root() {
     #clear
     menu_info
   if [ "$EUID" -ne 0 ]; then
@@ -223,6 +223,31 @@ check_root() {
      echo ""; exit
     fi
   fi
+}
+
+check_root() {
+    #clear
+    menu_info
+    if [ "$EUID" -ne 0 ]; then
+        echo ""
+        echo -e "${amarillo} Se necesita privilegios de root. Ingresa la contraseña.${borra_colores}"
+
+        # Validar contraseña mediante sudo -E -v
+        if sudo -E -v > /dev/null 2>&1; then
+            echo ""
+            echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"
+            sleep 2
+            # Reejecuta el script como root preservando entorno
+            exec sudo -E "$0" "$@"
+        else
+            clear
+            menu_info
+            echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
+            echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
+            echo ""
+            exit
+        fi
+    fi
 }
 
 #funcion de detectar sistema de paquetado para instalar
