@@ -225,31 +225,6 @@ check_root() {
   fi
 }
 
-cccheck_root() {
-    #clear
-    menu_info
-    if [ "$EUID" -ne 0 ]; then
-        echo ""
-        echo -e "${amarillo} Se necesita privilegios de root. Ingresa la contraseña.${borra_colores}"
-
-        # Validar contraseña mediante sudo -E -v
-        if sudo -E -v > /dev/null 2>&1; then
-            echo ""
-            echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"
-            sleep 2
-            # Reejecuta el script como root preservando entorno
-            exec sudo -E "$0" "$@"
-        else
-            clear
-            menu_info
-            echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
-            echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
-            echo ""
-            exit
-        fi
-    fi
-}
-
 #funcion de detectar sistema de paquetado para instalar
 paqueteria(){
 echo -e "${azul} Detectando sistema de paquetería...${borra_colores}"
@@ -379,7 +354,17 @@ check_root
 
 zenity --info --title="Estado" --text="Zenity correcto" > /dev/null 2>&1
 if [ ! $? = 0 ]; then
-    echo "error de ejecucion"; sleep 3
+    echo -e ""
+    echo -e " Fallo en la ejecucion de entorno grafico, posibles causas:"
+    echo -e ""
+    echo -e "   - Si lo estas ejecutando en una terminal de ssh: ssh -Y usuario@ip_del_servidor"
+    echo -e "   - Tienes que tener habilitadas las opciones siguientes opciones en tu server ssh"
+    echo -e "       - X11Forwarding yes"
+    echo -e "       - X11UseLocalhost yes"
+    echo -e "       - X11DisplayOffset 10"
+    echo -e "       Que estan dentro de /etc/ssh/sshd_config"
+    echo -e ""
+
 fi
 
 ## EMPIEZA LO GORDO ##
