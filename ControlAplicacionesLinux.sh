@@ -364,6 +364,7 @@ if [ ! $? = 0 ]; then
     echo -e "       - X11DisplayOffset 10"
     echo -e "       Que estan dentro de /etc/ssh/sshd_config"
     echo -e ""
+    read -p " Pulsa una tecla para continuar" p
     exit
 fi
 
