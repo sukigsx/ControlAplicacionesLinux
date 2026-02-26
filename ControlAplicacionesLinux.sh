@@ -407,6 +407,7 @@ while true; do
         "/home/$usuario/.local/share/flatpak/exports/share/applications"
         "/snap/bin"
         "/home/$usuario/Applications/"
+        "/usr/lib/"
     )
 
     if [ "$opcion_usuario" == "Listar aplicaciones sin permiso de ejecución" ]; then
