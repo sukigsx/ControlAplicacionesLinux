@@ -369,6 +369,8 @@ if [ -z "$DISPLAY" ]; then
     read -p " Pulsa una tecla para continuar" p
     echo -e "${borra_colores}"
     exit
+else
+    echo ""; clear
 fi
 
 ## EMPIEZA LO GORDO ##
