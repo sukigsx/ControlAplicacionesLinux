@@ -353,7 +353,7 @@ clear
 check_root
 
 
-if [ ! -z "$DISPLAY" ]; then
+if [ -z "$DISPLAY" ]; then
     echo -e ""
     echo -e "${rojo} Fallo en la ejecucion de entorno grafico.${borra_colores} Posibles causas:"
     echo -e ""
