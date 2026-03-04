@@ -60,7 +60,7 @@ function ctrl_c()
 clear
 echo ""
 echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
-echo ""
+echo -e "${borra_colores}"
 sleep 1
 exit
 }
