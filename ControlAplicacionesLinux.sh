@@ -377,7 +377,7 @@ fi
 export ZENITY_NO_GTK_WARNINGS=1
 
 while true; do
-    usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" {print $1}' | sort | \
+    usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" && $1!="nobody" {print $1}' | sort | \
         zenity --list --title="Diseñado por SUKIGSX" \
         --text="Selecciona el usuario para administrar permisos de ejecución:" \
         --column="Usuario" --height=300 --width=300 \
