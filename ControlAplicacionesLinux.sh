@@ -42,6 +42,7 @@ nombre_carpeta_repositorio="ControlAplicacionesLinux" #poner el nombre de la car
         [getfacl]="acl"
         [zenity]="zenity"
         [tr]="coreutils"
+        [xauth]="xorg-xauth"
     )
 
 #colores
