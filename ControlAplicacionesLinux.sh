@@ -4,8 +4,8 @@
 # con export son las variables necesarias para exportar al los siguientes script
 #variables para el menu_info
 
-export NombreScript="Ejecutar_scripts"
-export DescripcionDelScript="Control interactivo de tus scripts"
+export NombreScript="ControlAplicacionesLinux"
+export DescripcionDelScript="Control de ejecución de aplicaciones en tu sistema Linux"
 export Correo="scripts@mbbsistemas.es"
 export Web="https://repositorio.mbbsistemas.es"
 export version="1.0"
