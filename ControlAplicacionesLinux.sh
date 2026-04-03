@@ -181,9 +181,6 @@ for comando in "${!requeridos[@]}"; do
 # Función que comprueba si se ejecuta como root
 check_root() {
     #clear
-    #menu_info
-  if [ "$EUID" -ne 0 ]; then
-    #clear
     menu_info
     if [ "$EUID" -ne 0 ]; then
     echo ""
