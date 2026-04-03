@@ -183,8 +183,11 @@ check_root() {
     #clear
     #menu_info
   if [ "$EUID" -ne 0 ]; then
-    #echo ""
-    #echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
+    #clear
+    menu_info
+    if [ "$EUID" -ne 0 ]; then
+    echo ""
+    echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
 
     # Pedir contraseña para sudo
     #echo -e ""
@@ -194,17 +197,17 @@ check_root() {
       echo ""
       echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
       # Reejecuta el script como root
-      #exec sudo "$0" "$@"
+      sudo -E > /dev/null 2>&1
     else
       clear
       menu_info
       echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
       echo ""
-      echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
-      for elemento in "${requeridos[@]}"; do
-        echo -e "     $elemento"
-      done
-      echo ""
+      #echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
+      #for elemento in "${requeridos[@]}"; do
+      #  echo -e "     $elemento"
+      #done
+      #echo ""
       echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
      echo ""; exit
     fi
