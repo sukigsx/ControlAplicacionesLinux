@@ -4,7 +4,7 @@
 # con export son las variables necesarias para exportar al los siguientes script
 #variables para el menu_info
 
-export NombreScript="ControlAplicacionesLinux"
+export NombreScript="Control de aplicaciones Linux"
 export DescripcionDelScript="Control de ejecución de aplicaciones en tu sistema Linux"
 export Correo="scripts@mbbsistemas.es"
 export Web="https://repositorio.mbbsistemas.es"
@@ -35,11 +35,10 @@ nombre_carpeta_repositorio="ControlAplicacionesLinux" #poner el nombre de la car
         [xdg-user-dir]="xdg-user-dirs"
 
         #requeridos para el script en si
-        [grep]="grep"
-        [getfacl]="acl"
-        [zenity]="zenity"
-        [xauth]="xorg-xauth" #gestionar la autenticación del servidor X (Xorg)
-    )
+        [fzf]="fzf"
+        [setfacl]="acl"
+        )
+
 ###########################
 ## FUNCIONES PRINCIPALES ##
 ###########################
@@ -158,7 +157,6 @@ for comando in "${!requeridos[@]}"; do
                 echo ""
                 echo -e " ${rojo}No se puede ejecutar el script sin todo el software necesario.${borra_colores}"
                 echo ""
-                read -p " Pulsa una tecla para continuar" pulsa
                 exit 1
             else
                 echo -e "${amarillo} Se necesita instalar ${borra_colores}$comando${amarillo} para la ejecucion del script${borra_colores}"
@@ -181,10 +179,10 @@ for comando in "${!requeridos[@]}"; do
 # Función que comprueba si se ejecuta como root
 check_root() {
     #clear
-    menu_info
-    if [ "$EUID" -ne 0 ]; then
-    echo ""
-    echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
+    #menu_info
+  if [ "$EUID" -ne 0 ]; then
+    #echo ""
+    #echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
 
     # Pedir contraseña para sudo
     #echo -e ""
@@ -194,17 +192,17 @@ check_root() {
       echo ""
       echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
       # Reejecuta el script como root
-      sudo -E > /dev/null 2>&1
+      #exec sudo "$0" "$@"
     else
       clear
       menu_info
       echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
       echo ""
-      #echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
-      #for elemento in "${requeridos[@]}"; do
-      #  echo -e "     $elemento"
-      #done
-      #echo ""
+      echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
+      for elemento in "${requeridos[@]}"; do
+        echo -e "     $elemento"
+      done
+      echo ""
       echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
      echo ""; exit
     fi
@@ -319,7 +317,7 @@ if [ $conexion = "SI" ]; then
         if [ $software = "SI" ]; then
             export software="SI"
             export conexion="SI"
-            export actualizado="NOOOOO"
+            export actualizado="NOOOOOoo"
             #bash $ruta_ejecucion/ #PON LA RUTA
         else
             echo ""
@@ -337,204 +335,215 @@ else
     fi
 fi
 
-
-
+# EMPIEZA EL SCRIPT
+sleep 2
 clear
+#menu_info
 
-check_root
+# Configuración de colores para los mensajes del script y fzf
+VERDE='\033[0;32m'
+AZUL='\033[0;34m'
+AMARILLO='\033[1;33m'
+ROJO='\033[0;31m'
+NC='\033[0m' # No Color
+CLEAR='\033[2J\033[H'
 
+# Estilo profesional universal
+export FZF_DEFAULT_OPTS="
+  --color=bg+:#262626,bg:#1c1c1c,spinner:#5fafd7,hl:#5fafd7
+  --color=fg:#bcbcbc,header:#5fafd7,info:#af87d7,pointer:#5fafd7
+  --color=marker:#5fd787,fg+:#ffffff,prompt:#5fafd7,hl+:#5fafd7
+  --reverse
+"
 
-if [ -z "$DISPLAY" ]; then
-    echo -e ""
-    echo -e "${rojo} Fallo en la ejecucion de entorno grafico.${borra_colores} Posibles causas:"
-    echo -e ""
-    echo -e "${azul} -${borra_colores} Mal configurado el servidor ssh, si lo modicicas acuerdate de reiniciar el servidor ssh."
-    echo -e "      Ruta del fichero en ${azul}/etc/ssh/sshd_config${borra_colores}."
-    echo -e "${azul}   --${borra_colores} X11Forwarding yes"
-    echo -e "${azul}   --${borra_colores} X11UseLocalhost yes"
-    echo -e "${azul}   --${borra_colores} X11DisplayOffset 10"
-    echo -e ""
-    echo -e "${azul} -${borra_colores} Conectar con el parametro -Y. ej ssh -Y usuario@ip_del_servidor"
-    echo -e ""
-    read -p " Pulsa una tecla para continuar" p
-    echo -e "${borra_colores}"
-    exit
-else
-    echo ""; clear
+# Verificar dependencias básicas
+if ! command -v fzf &> /dev/null || ! command -v setfacl &> /dev/null; then
+    echo -e "${ROJO}❌ Error: Se requiere 'fzf' y 'acl' (setfacl) para ejecutar este script.${NC}"
+    exit 1
 fi
 
-## EMPIEZA LO GORDO ##
+#echo -e "$CLEAR"
+# 1. SELECCIÓN DE USUARIO
+usuario=$(getent passwd | awk -F: '$7 ~ /\/(bash|sh|zsh)$/ {print $1}' | sort | \
+    fzf --prompt=" 👥 USUARIO > " \
+        --header="==================================================
+ GESTOR DE ACL: SELECCIÓN DE USUARIO
+==================================================
+Selecciona el usuario que deseas gestionar:")
 
-# Evitar advertencias de GTK/Zenity en la consola
-export ZENITY_NO_GTK_WARNINGS=1
+if [ -z "$usuario" ]; then
+    echo ""
+    echo -e "${ROJO}❌ Operación cancelada: No se seleccionó ningún usuario.${NC}"; sleep 3
+    ctrl_c
+    #exit 1
+fi
 
-while true; do
-    usuario=$(getent passwd | awk -F: '$3>=1000 && $7!="/usr/sbin/nologin" && $1!="nobody" {print $1}' | sort | \
-        zenity --list --title="Diseñado por SUKIGSX" \
-        --text="Selecciona el usuario para administrar permisos de ejecución:" \
-        --column="Usuario" --height=300 --width=300 \
-        --ok-label="Seleccionar" --cancel-label="Salir" 2>/dev/null)
+echo -e "\n${AZUL}🔍 Analizando el sistema y auditando permisos en tiempo real para: ${VERDE}$usuario${NC}"
 
-    [ -z "$usuario" ] && exit 0
+# 2. RECOPILACIÓN Y AUDITORÍA EN TIEMPO REAL
+rutas_desktop=(
+    "/usr/share/applications"
+    "/usr/local/share/applications"
+    "$HOME/.local/share/applications"
+)
 
-    # NUEVA VENTANA con botones
-    opcion_usuario=$(zenity --list --radiolist \
-        --title="Diseñado por SUKIGSX" \
-        --text="¿Qué deseas hacer para el usuario $usuario?" \
-        --column="Selecciona" --column="Acción" \
-        TRUE "Configurar permisos de aplicaciones" \
-        FALSE "Listar aplicaciones sin permiso de ejecución" \
-        --height=250 --width=500 \
-        --ok-label="Continuar" --cancel-label="Atrás" 2>/dev/null)
+lista_base_apps=""
 
-    [ -z "$opcion_usuario" ] && continue
-
-    # -------------------------------------------------------
-    # OPCIÓN 1: Listar aplicaciones sin permiso de ejecución
-    # -------------------------------------------------------
-    rutas_adicionales=(
-        "/var/lib/flatpak/exports/bin"
-        "/home/$usuario/.local/share/flatpak/exports/bin"
-        "/var/lib/flatpak/exports/share/applications"
-        "/home/$usuario/.local/share/flatpak/exports/share/applications"
-        "/snap/bin"
-        "/home/$usuario/Applications/"
-        "/usr/lib/"
-    )
-
-    if [ "$opcion_usuario" == "Listar aplicaciones sin permiso de ejecución" ]; then
-        sin_permiso=()
-        IFS=: read -ra path_dirs <<< "$PATH"
-        for fdir in "${rutas_adicionales[@]}"; do
-            [ -d "$fdir" ] && path_dirs+=("$fdir")
-        done
-
-        for dir in "${path_dirs[@]}"; do
-            [ -d "$dir" ] || continue
-            while IFS= read -r file; do
-                [ -f "$file" ] || continue
-                [ -x "$file" ] || continue
-                acl_output=$(getfacl -p "$file" 2>/dev/null | grep "^user:$usuario:")
-                if [ -n "$acl_output" ]; then
-                    permisos=$(echo "$acl_output" | awk -F: '{print $3}')
-                    if [[ "$permisos" != *x* ]]; then
-                        sin_permiso+=("$file")
-                    fi
-                fi
-            done < <(find "$dir" -maxdepth 2 -type f 2>/dev/null)
-        done
-
-        if [ ${#sin_permiso[@]} -eq 0 ]; then
-            zenity --info --title="Diseñado por SUKIGSX" \
-                   --text="El usuario $usuario tiene permiso de ejecución en todas las aplicaciones con ACL definidas." \
-                   --width=400 --height=200 2>/dev/null
-        else
-            zenity --info \
-                --title="Aplicaciones sin permiso de ejecución" \
-                --width=500 --height=500 \
-                --text="Puede ser que no se muentren todos los que tengas bloqueados debido:\n1- Enlaces simbolicos\n2- Software instalado por snap\n\n El usuario $usuario NO tiene permiso de ejecución (ACL) en los siguientes archivos:\n\n$(printf '%s\n' "${sin_permiso[@]}")" \
-                --ok-label="Aceptar" 2>/dev/null
+while IFS= read -r f_desktop; do
+    [ -z "$f_desktop" ] && continue
+    app_name=""
+    app_exec=""
+    while IFS= read -r linea || [ -n "$linea" ]; do
+        [[ "$linea" =~ ^"["[a-zA-Z[:space:]]+"]" && "$linea" != "[Desktop Entry]" ]] && break
+        if [[ "$linea" =~ ^Name= && -z "$app_name" ]]; then
+            app_name=$(echo "$linea" | cut -d'=' -f2- | sed 's/ *$//')
+        elif [[ "$linea" =~ ^Exec= && -z "$app_exec" ]]; then
+            app_exec=$(echo "$linea" | cut -d'=' -f2-)
+            app_exec=$(echo "$app_exec" | sed -E 's/ %[^ ]+//g' | sed 's/^"//;s/"$//' | awk '{print $1}')
         fi
-        continue
+    done < "$f_desktop"
+    if [ -n "$app_name" ] && [ -n "$app_exec" ]; then
+        lista_base_apps+="$app_name|$app_exec\n"
+    fi
+done < <(find "${rutas_desktop[@]}" -name "*.desktop" 2>/dev/null)
+
+lista_base_apps=$(echo -e "$lista_base_apps" | sort -u)
+
+lista_plana_auditada=""
+while IFS= read -r app; do
+    [ -z "$app" ] && continue
+    nombre_app=$(echo "$app" | cut -d'|' -f1)
+    comando=$(echo "$app" | cut -d'|' -f2)
+
+    if [[ "$comando" == /* ]]; then
+        fichero="$comando"
+    else
+        fichero=$(command -v "$comando")
     fi
 
-    # -------------------------------------------------------
-    # OPCIÓN 2: Configurar permisos manualmente
-    # -------------------------------------------------------
-    rutas_adicionales=(
-        "/var/lib/flatpak/exports/bin"
-        "/home/$usuario/.local/share/flatpak/exports/bin"
-        "/var/lib/flatpak/exports/share/applications"
-        "/home/$usuario/.local/share/flatpak/exports/share/applications"
-        "/snap/bin"
-        "/home/$usuario/Applications"
-    )
+    # Si es nuestro wrapper, auditamos basándonos en el binario real oculto trasero (.real)
+    fichero_test="$fichero"
+    [ -f "${fichero}.real" ] && fichero_test="${fichero}.real"
 
-    apps_array=()
-    IFS=: read -ra path_dirs <<< "$PATH"
-    for fdir in "${rutas_adicionales[@]}"; do
-        [ -d "$fdir" ] && path_dirs+=("$fdir")
-    done
-
-    for dir in "${path_dirs[@]}"; do
-        if [ -d "$dir" ]; then
-            while IFS= read -r file; do
-                if { [ -x "$file" ] && [ -f "$file" ]; } || [[ "$file" == *.desktop ]]; then
-                    apps_array+=("$file")
-                fi
-            done < <(find "$dir" -maxdepth 2 \( -type f -o -type l \) 2>/dev/null)
-        fi
-    done
-
-    mapfile -t apps_array < <(printf "%s\n" "${apps_array[@]}" | sort -u)
-
-    zenity_list=()
-    for app in "${apps_array[@]}"; do
-        zenity_list+=("$app" "$app" FALSE)
-    done
-
-    selected_apps=$(zenity --list --checklist \
-        --title="Diseñado por SUKIGSX" \
-        --text="Selecciona las aplicaciones marcando las casillas.\nPuedes buscar escribiendo el nombre:" \
-        --column="Selecciona" --column="Archivo" --column="Seleccionada" \
-        "${zenity_list[@]}" \
-        --height=500 --width=800 \
-        --ok-label="Seleccionar" --cancel-label="Atrás" 2>/dev/null)
-
-    [ -z "$selected_apps" ] && continue
-
-    action=$(zenity --list --radiolist \
-        --title="Diseñado por SUKIGSX" \
-        --text="Aplicaciones seleccionadas para el usuario $usuario:" \
-        --column="Selecciona" --column="Acción" \
-        TRUE "Quitar permisos de ejecución (rw-)" \
-        FALSE "Dar permisos de ejecución (rwx)" \
-        --ok-label="Aplicar" --cancel-label="Salir" 2>/dev/null)
-
-    [ -z "$action" ] && continue
-
-    IFS="|" read -ra apps_selected <<< "$selected_apps"
-
-    for app in "${apps_selected[@]}"; do
-        target="$app"
-
-        # Resolver .desktop → ejecutable real
-        if [[ "$app" == *.desktop ]]; then
-            exec_line=$(grep -m1 "^Exec=" "$app" | cut -d'=' -f2- | awk '{print $1}')
-            if [ -n "$exec_line" ]; then
-                if command -v flatpak &>/dev/null && [[ "$exec_line" == flatpak* ]]; then
-                    flatpak_id=$(echo "$exec_line" | awk '{print $2}')
-                    [ -x "/var/lib/flatpak/exports/bin/$flatpak_id" ] && target="/var/lib/flatpak/exports/bin/$flatpak_id"
-                    [ -x "/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id" ] && target="/home/$usuario/.local/share/flatpak/exports/bin/$flatpak_id"
-                elif [ -x "$exec_line" ]; then
-                    target="$exec_line"
-                fi
-            fi
-        fi
-
-        real_app=$(readlink -f "$target")
-
-        # Detectar enlaces simbólicos de Snap
-        if [[ "$real_app" == "/usr/bin/snap" && "$target" == /snap/bin/* ]]; then
-            zenity --warning \
-                --title="Aviso sobre aplicaciones Snap" \
-                --text="El archivo $target es un enlace simbólico a /usr/bin/snap.\n\
-Todos los programas Snap comparten este mismo ejecutable.\n\
-Por lo tanto, cualquier cambio de permisos afecta a todos los snaps." \
-                --width=450 --height=200 2>/dev/null
-        fi
-
-        # Aplicar permisos según selección
-        if [ "$action" == "Quitar permisos de ejecución (rw-)" ]; then
-            sudo setfacl -m u:"$usuario":rw- "$real_app"
-            [[ "$real_app" == *.AppImage ]] && sudo chown root:root "$real_app"
+    if [ -n "$fichero" ] && [ -f "$fichero_test" ]; then
+        if sudo -u "$usuario" test -x "$fichero_test" 2>/dev/null; then
+            lista_plana_auditada+="PERMITIDO@@@$nombre_app@@@$fichero\n"
         else
-            sudo setfacl -m u:"$usuario":rwx "$real_app"
-            [[ "$real_app" == *.AppImage ]] && sudo chown "$usuario":"$usuario" "$real_app"
+            lista_plana_auditada+="DENEGADO@@@$nombre_app@@@$fichero\n"
         fi
-    done
+    fi
+done <<< "$lista_base_apps"
 
-    zenity --info --title="Diseñado por SUKIGSX" \
-        --text="Permisos ACL aplicados correctamente al usuario $usuario." \
-        --width=400 --height=150 2>/dev/null
+lista_columnas=$(echo -e "$lista_plana_auditada" | column -t -s "@@@")
+
+lista_final_coloreada=""
+while IFS= read -r linea; do
+    [ -z "$linea" ] && continue
+    if [[ "$linea" == PERMITIDO* ]]; then
+        resto=${linea#PERMITIDO}
+        lista_final_coloreada+="$(printf "${VERDE}PERMITIDO${NC}%s\n" "$resto")\n"
+    elif [[ "$linea" == DENEGADO* ]]; then
+        resto=${linea#DENEGADO}
+        lista_final_coloreada+="$(printf "${ROJO}DENEGADO${NC}%s\n" "$resto")\n"
+    fi
+done <<< "$lista_columnas"
+
+# 3. INTERFAZ INTERACTIVA FZF
+seleccion=$(echo -e "$lista_final_coloreada" | \
+    fzf --ansi \
+        --multi \
+        --prompt=" 🎯 SELECTOR APLICACIONES > " \
+        --header="==================================================
+ ESTADO ACTUAL DE PERMISOS PARA: ${VERDE}$usuario${NC}
+==================================================
+Filtra por nombre o estado (PERMITIDO / DENEGADO).
+[TAB] Marcar programas para modificar | [ENTER] Confirmar")
+
+if [ -z "$seleccion" ]; then
+    echo -e "${ROJO}❌ Operación cancelada: No se seleccionó ninguna aplicación.${NC}"; sleep 3
+    ctrl_c
+    exit 1
+fi
+
+binarios_a_modificar=$(echo "$seleccion" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $NF}')
+
+# 4. MENÚ DE ACCIÓN
+echo -e "$CLEAR"
+opcion=$(printf "🟢 Otorgar permisos de ejecución (+x)\n🔴 Revocar permisos de ejecución (-x)" | \
+    fzf --prompt=" 🛠️ ACCIÓN > " \
+        --header="==================================================
+ SELECCIONA LA ACCIÓN DE CAMBIO (ACL) PARA: ${VERDE}$usuario${NC}
+==================================================
+¿Qué directiva deseas aplicar a los elementos seleccionados?")
+
+case "$opcion" in
+    *"Otorgar"*)
+        accion_acl="u:$usuario:rx"
+        modo_bloqueo="falso"
+        msg="Añadido permiso de ejecución"
+        ;;
+    *"Revocar"*)
+        # Le quitamos el acceso al binario trasero
+        accion_acl="u:$usuario:r-"
+        modo_bloqueo="verdadero"
+        msg="Quitado permiso de ejecución"
+        ;;
+    *)
+        echo -e "${ROJO}❌ Operación cancelada.${NC}"; sleep 3
+        ctrl_c
+        exit 1
+        ;;
+esac
+
+# 5. APLICACIÓN DE CAMBIOS CON WRAPPER DE MENSAJE PERSONALIZADO
+echo -e "\n${AZUL}🚀 Aplicando directivas y envoltorios de seguridad...${NC}\n"
+
+echo "$binarios_a_modificar" | while IFS= read -r fichero; do
+    if [ -n "$fichero" ] && [ -f "$fichero" ]; then
+
+        # DEFINICIÓN DE RUTAS (Fichero original vs Envoltorio)
+        if [ ! -f "${fichero}.real" ]; then
+            # Es la primera vez que tocamos este software: movemos el binario original a .real
+            sudo mv "$fichero" "${fichero}.real"
+        fi
+
+        binario_real="${fichero}.real"
+
+        # Aplicamos la ACL restrictiva o permisiva sobre el ejecutable real trasero
+        sudo setfacl -m "$accion_acl" "$binario_real"
+
+        # Volvemos a escribir/actualizar el script wrapper frontal en la ruta original
+        # Este script interceptará la llamada y comprobará el acceso del usuario en vivo
+        sudo bash -c "cat << 'EOF' > $fichero
+#!/bin/bash
+# Envoltorio de seguridad automático para control de ACL
+BINARIO_REAL=\"$binario_real\"
+
+if test -x \"\$BINARIO_REAL\"; then
+    # El usuario actual sí está permitido -> Se lanza el software pasándole sus argumentos originales (\$@)
+    exec \"\$BINARIO_REAL\" \"\$@\"
+else
+    # El usuario actual está bloqueado por el administrador -> Mensaje personalizado
+    echo -e \"\n\033[0;31m🚫 SOFTWARE BLOQUEADO: No tienes autorización para ejecutar este programa.\033[0m\n\"
+
+    # Si el usuario está ejecutando desde el escritorio gráfico, lanzamos una alerta emergente limpia
+    if [ -n \"\$DISPLAY\" ] && command -v zenity &> /dev/null; then
+        zenity --error --title=\"Control de Accesos\" --text=\"🚫 SOFTWARE BLOQUEADO:\nNo tienes autorización para usar este programa.\" --timeout=15 2>/dev/null &
+    fi
+    exit 130
+fi
+EOF"
+
+        # Hacemos que el wrapper frontal sea ejecutable de forma global para que todo el mundo pueda llamarlo
+        sudo chmod 755 "$fichero"
+
+        echo -e " [${VERDE}OK${NC}] $msg -> ${AZUL}$fichero${NC}"
+    fi
 done
+
+echo -e "\n${VERDE}✨ Proceso completado con éxito.${NC}\n"; sleep 3
+
+
+
+
+
