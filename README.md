@@ -80,14 +80,21 @@ Este proyecto se distribuye bajo los términos de la licencia MIT. Siéntete lib
 
 
 
-## Instalacion
-Clonar el repositorio (se clonaran las dos versiones, la de terminal fzf y la de zenity)
+## INSTALACION, Clonar el repositorio (se clonaran las dos versiones, la de terminal fzf y la de zenity)
 
 ```
 git clone https://github.com/sukigsx/ControlAplicacionesLinux.git
 ```
 
-Tambien puedes utilizar mi script (ejecutar_scripts).
+## Descarga directa con WGET
+```
+wget -O ControlAplicacionesLinux.sh https://raw.githubusercontent.com/sukigsx/ControlAplicacionesLinux/refs/heads/main/ControlAplicacionesLinux.sh && chmod +x ControlAplicacionesLinuxGui.sh
+```
+```
+wget -O ControlAplicacionesLinuxGui.sh https://raw.githubusercontent.com/sukigsx/ControlAplicacionesLinux/refs/heads/main/ControlAplicacionesLinuxGui.sh && chmod +x ControlAplicacionesLinuxGio.sh
+```
+
+## Tambien puedes utilizar mi script (ejecutar_scripts).
 
 ```
 git clone https://github.com/sukigsx/ejecutar_scripts.git
