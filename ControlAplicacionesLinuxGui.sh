@@ -1,3 +1,11 @@
+        #requeridos para el script en si
+        [grep]="grep"
+        [getfacl]="acl"
+        [zenity]="zenity"
+        [xauth]="xorg-xauth" #gestionar la autenticación del servidor X (Xorg)
+
+
+
 #!/usr/bin/env bash
 
 #VARIABLES PRINCIPALES
@@ -23,23 +31,24 @@ NombreScriptActualizar="ControlAplicacionesLinuxGui.sh" #contiene el nombre del 
 DireccionGithub="https://github.com/sukigsx/ControlAplicacionesLinux" #contiene la direccion de github para actualizar el script
 nombre_carpeta_repositorio="ControlAplicacionesLinux" #poner el nombre de la carpeta cuando se clona el repo para poder eliminarla
 
-#VARIABLES DE SOFTWARE NECESARIO
-# Asociamos comandos con el paquete que los contiene [comando a comprobar]="paquete a instalar"
-    declare -A requeridos
-    requeridos=(
-        #requeridos para poder actualizar
-        [git]="git"
-        [diff]="diff"
-        [sudo]="sudo"
-        [ping]="ping"
-        [xdg-user-dir]="xdg-user-dirs"
+# VARIABLES DE SOFTWARE NECESARIO
+# Asociamos comandos con los paquetes correspondientes.
+# Formato si cambian: [comando]="paquete_debian / paquete_redhat / paquete_arch"
+# Formato si son iguales: [comando]="paquete_unico"
+declare -A requeridos
+requeridos=(
+    # Requeridos para poder actualizar
+        [git]="git/git/git"
+        [diff]="diffutils/diffutils/diffutils"
+        [sudo]="sudo/sudo/sudo"
+        [ping]="iputils-ping/iputils/iputils/"
+        [xdg-user-dir]="xdg-user-dirs/xdg-user-dirs/xdg-user-dirs"
 
-        #requeridos para el script en si
-        [grep]="grep"
-        [getfacl]="acl"
-        [zenity]="zenity"
-        [xauth]="xorg-xauth" #gestionar la autenticación del servidor X (Xorg)
-    )
+        [grep]="grep/grep/grep"
+        [getfacl]="acl/acl/acl"
+        [zenity]="zenity/zenity/zenity"
+        [xauth]="xorg-xauth/xorg-x11-xauth/xorg-xauth" #gestionar la autenticación del servidor X (Xorg)
+)
 ###########################
 ## FUNCIONES PRINCIPALES ##
 ###########################
@@ -128,49 +137,62 @@ actualizar_script(){
     exit
 }
 
-#funcion para comprobar el software necesario
+# Funcion para comprobar el software necesario
 software_necesario(){
-#funcion software necesario
-#para que funcione necesita:
-#   conexion a internet
-#   la paleta de colores
-#   software: which
-paqueteria
-echo ""
-echo -e "${azul} Comprobando el software necesario.${borra_colores}"
-echo ""
-for comando in "${!requeridos[@]}"; do
-        command -v $comando &>/dev/null
+    # Detectamos la paqueteria y establecemos el idx_distro antes de evaluar la matriz
+    paqueteria
+
+    echo ""
+    echo -e "${azul} Comprobando el software necesario.${borra_colores}"
+    echo ""
+
+    for comando in "${!requeridos[@]}"; do
+        # Evaluamos si el valor de la matriz contiene variantes por barra '/'
+        if [[ "${requeridos[$comando]}" == *"/"* ]]; then
+            paquete_real=$(echo "${requeridos[$comando]}" | cut -d'/' -f$idx_distro)
+        else
+            paquete_real="${requeridos[$comando]}"
+        fi
+
+        command -v "$comando" &>/dev/null
         sino=$?
         contador=1
         while [ $sino -ne 0 ]; do
             if [ $contador -ge 4 ] || [ "$conexion" = "no" ]; then
                 clear
                 menu_info
-                echo -e " ${amarillo}NO se puede ejecutar el script sin los paquetes necesarios ${rojo}${requeridos[$comando]}${amarillo}.${borra_colores}"
-                echo -e " ${amarillo}NO se ha podido instalar ${rojo}${requeridos[$comando]}${amarillo}.${borra_colores}"
-                echo -e " ${amarillo}Inténtelo usted con: (${borra_colores}$instalar${requeridos[$comando]}${amarillo})${borra_colores}"
-                echo -e ""
+                echo -e " ${amarillo}NO se puede ejecutar el script sin los paquetes necesarios ${rojo}$paquete_real${amarillo}.${borra_colores}"
+                echo -e " ${amarillo}NO se ha podido instalar ${rojo}$paquete_real${amarillo}.${borra_colores}"
+                echo -e " ${amarillo}Inténtelo usted con: (${borra_colores}$instalar $paquete_real${amarillo})${borra_colores}"
+                echo ""
                 echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
-                for elemento in "${requeridos[@]}"; do
-                    echo -e "     $elemento"
+
+                # Listar los nombres traducidos de los paquetes para comodidad del usuario
+                for cmd_lista in "${!requeridos[@]}"; do
+                    if [[ "${requeridos[$cmd_lista]}" == *"/"* ]]; then
+                        echo -e "     $(echo "${requeridos[$cmd_lista]}" | cut -d'/' -f$idx_distro)"
+                    else
+                        echo -e "     ${requeridos[$cmd_lista]}"
+                    fi
                 done
+
                 echo ""
                 echo -e " ${rojo}No se puede ejecutar el script sin todo el software necesario.${borra_colores}"
                 echo ""
-                read -p " Pulsa una tecla para continuar" pulsa
                 exit 1
             else
                 echo -e "${amarillo} Se necesita instalar ${borra_colores}$comando${amarillo} para la ejecucion del script${borra_colores}"
-                ### check_root
-                echo " Instalando ${requeridos[$comando]}. Intento $contador/3."
-                $instalar ${requeridos[$comando]} &>/dev/null
+                echo " Instalando $paquete_real. Intento $contador/3."
+
+                # Ejecución de la instalación silenciosa
+                $instalar "$paquete_real" &>/dev/null
+
                 let "contador=contador+1"
-                command -v $comando &>/dev/null
+                command -v "$comando" &>/dev/null
                 sino=$?
             fi
         done
-        echo -e " [${verde}ok${borra_colores}] $comando (${requeridos[$comando]})."
+        echo -e " [${verde}ok${borra_colores}] $comando ($paquete_real)."
     done
 
     echo ""
@@ -181,10 +203,10 @@ for comando in "${!requeridos[@]}"; do
 # Función que comprueba si se ejecuta como root
 check_root() {
     #clear
-    menu_info
-    if [ "$EUID" -ne 0 ]; then
-    echo ""
-    echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
+    #menu_info
+  if [ "$EUID" -ne 0 ]; then
+    #echo ""
+    #echo -e "${amarillo} Se necesita privilegios de root ingresa la contraseña.${borra_colores}"
 
     # Pedir contraseña para sudo
     #echo -e ""
@@ -194,69 +216,52 @@ check_root() {
       echo ""
       echo -e "${verde} Autenticación correcta. Ejecutando como root...${borra_colores}"; sleep 2
       # Reejecuta el script como root
-      sudo -E > /dev/null 2>&1
+      #exec sudo "$0" "$@"
     else
       clear
       menu_info
       echo -e "${rojo} Contraseña incorrecta o acceso denegado. Saliendo del script.${borra_colores}"
       echo ""
-      #echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
-      #for elemento in "${requeridos[@]}"; do
-      #  echo -e "     $elemento"
-      #done
-      #echo ""
+      echo -e "${azul} Listado de los paquetes necesarios para poder ejecutar el script:${borra_colores}"
+      for elemento in "${requeridos[@]}"; do
+        echo -e "     $elemento"
+      done
+      echo ""
       echo -e "${azul} GRACIAS POR UTILIZAR MI SCRIPT${borra_colores}"
      echo ""; exit
     fi
   fi
 }
 
-#funcion de detectar sistema de paquetado para instalar
+# Funcion de detectar sistema de paquetado para instalar
 paqueteria(){
-echo ""
-echo -e "${azul} Detectando sistema de paquetería...${borra_colores}"
-echo ""
+    echo ""
+    echo -e "${azul} Detectando sistema de paquetería...${borra_colores}"
+    echo ""
 
-if command -v apt >/dev/null 2>&1; then
-    echo -e "${verde} Sistema de paquetería detectado: APT (Debian, Ubuntu, Mint, etc.)${borra_colores}"
-    instalar="sudo apt install -y "
-    paqueteria="apt"
+    if command -v apt >/dev/null 2>&1; then
+        echo -e "${verde} Sistema de paquetería detectado: APT (Debian, Ubuntu, Mint, etc.)${borra_colores}"
+        instalar="sudo apt install -y"
+        paqueteria="apt"
+        idx_distro=1
 
-elif command -v dnf >/dev/null 2>&1; then
-    echo -e "${cerde} Sistema de paquetería detectado: DNF (Fedora, RHEL, Rocky, AlmaLinux)${borra_colores}"
-    instalar="sudo dnf install -y "
-    paqueteria="dnf"
+    elif command -v dnf >/dev/null 2>&1; then
+        echo -e "${verde} Sistema de paquetería detectado: DNF (Fedora, RHEL, Rocky, AlmaLinux)${borra_colores}"
+        instalar="sudo dnf install -y"
+        paqueteria="dnf"
+        idx_distro=2
 
-elif command -v yum >/dev/null 2>&1; then
-    echo -e "${verde}Sistema de paquetería detectado: YUM (CentOS, RHEL antiguos)${borra_colores}"
-    instalar="sudo yum install -y "
-    paqueteria="yum"
+    elif command -v pacman >/dev/null 2>&1; then
+        echo -e "${verde} Sistema de paquetería detectado: PACMAN (Arch Linux, Manjaro)${borra_colores}"
+        instalar="sudo pacman -S --noconfirm"
+        paqueteria="pacman"
+        idx_distro=3
 
-elif command -v pacman >/dev/null 2>&1; then
-    echo -e "${verde} Sistema de paquetería detectado: Pacman (Arch Linux, Manjaro)${borra_colores}"
-    instalar="sudo pacman -S --noconfirm "
-    paqueteria="pacman"
-
-elif command -v zypper >/dev/null 2>&1; then
-    echo -e "${verde} Sistema de paquetería detectado: Zypper (openSUSE)${borra_colores}"
-    instalar="sudo zypper install -y "
-    paqueteria="zypper"
-
-elif command -v apk >/dev/null 2>&1; then
-    echo -e "${verde}Sistema de paquetería detectado: APK (Alpine Linux)${borra_colores}"
-    instalar="sudo apk add --no-interactive "
-    paqueteria="apk"
-
-elif command -v emerge >/dev/null 2>&1; then
-    echo -e "${verde}Sistema de paquetería detectado: Portage (Gentoo)${borra_colores}"
-    instalar="sudo emerge -av "
-    paqueteria="emerge"
-
-else
-    echo -e "${amarillo} No se pudo detectar un sistema de paquetería conocido.${borra_colores}"
-    paqueteria="${rojo}Desconocido${borra_colores}"
-fi
-#sleep 2
+    else
+        echo -e "${rojo} Sistema de paquetería no soportado automáticamente.${borra_colores}"
+        paqueteria="No detectada"
+        exit 1
+    fi
 }
 
 
@@ -336,8 +341,6 @@ else
         echo ""
     fi
 fi
-
-
 
 clear
 
